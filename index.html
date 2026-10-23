@@ -51,6 +51,22 @@ nav.tabbar button[aria-current="true"]{color:var(--stamp)}
 .today{background:var(--accent);color:var(--on-accent);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;width:100%;text-align:left}
 .today b{font-family:var(--serif);font-size:1.2rem;display:block}
 .days{display:flex;flex-direction:column;gap:12px}
+.search{position:relative;margin-bottom:10px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
+.search input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 40px 11px 38px;font-size:16px;-webkit-appearance:none;appearance:none}
+.search input::-webkit-search-cancel-button{display:none}
+.search .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;border-radius:50%;background:var(--surface2);color:var(--muted);font-size:1rem}
+.filters{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;scrollbar-width:none}
+.filters button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:.86rem;font-weight:600;color:var(--muted)}
+.filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.hit{display:grid;grid-template-columns:64px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;align-items:start}
+.hit img,.hit .ph{width:64px;height:64px;object-fit:cover;border-radius:10px;background:var(--surface2)}
+.hit .tx{min-width:0;display:flex;flex-direction:column;gap:4px}
+.hit mark{background:var(--stamp-soft);color:inherit;border-radius:3px;padding:0 1px}
+.count{font-size:.84rem;color:var(--muted);margin:0 0 10px}
+a.namelink{text-decoration:none;color:inherit;display:inline}
+a.namelink .pin{display:inline-block;width:14px;height:14px;margin-left:5px;vertical-align:-1px;color:var(--stamp)}
+a.thumblink{display:block}
 .dcard{display:grid;grid-template-columns:96px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:0;text-align:left;width:100%}
 .dcard img,.dcard .ph{width:96px;height:100%;min-height:96px;object-fit:cover;background:var(--surface2)}
 .dcard .tx{padding:10px 12px 10px 0;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -208,6 +224,10 @@ function renderTrip(){
   const ti=todayIndex();
   let h=`<div class="topbar"><div><div class="eyebrow">${fmt(dateOf(0))} – ${fmt(dateOf(13))} · 14 Tage</div><h1>Japan im Mai</h1></div></div>`;
   if(!isStandalone())h+=`<div class="install"><b>Als App installieren:</b> In Safari unten auf <b>Teilen</b> tippen, dann <b>Zum Home-Bildschirm</b>. Danach startet Japan Mai wie eine App und funktioniert auch ohne Netz.</div>`;
+  h+=`<div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Restaurant oder Ort suchen" value="${esc(searchQ)}" aria-label="Orte durchsuchen"><button class="clear" id="qClear" aria-label="Suche leeren" ${searchQ?"":"hidden"}>×</button></div>
+    <div class="filters" role="group" aria-label="Art">${["Alle","Essen","Sehen","Abend"].map(k=>`<button data-kind="${k}" aria-pressed="${searchKind===k}">${k==="Alle"?"Alle":k==="Abend"?"Bars & Abend":k}</button>`).join("")}</div>
+    <div id="results"></div><div id="tripMain">`;
   if(ti>=0)h+=`<button class="today" data-day="${ti}"><span><span class="eyebrow" style="color:inherit;opacity:.75">Heute · Tag ${ti+1}</span><b>${esc(TRIP[ti].titel)}</b></span><span>›</span></button>`;
   h+=`<div class="days">`;
   TRIP.forEach((D,i)=>{const st=stopsOf(i),done=st.filter(s=>S.done[s.id]).length,d=dateOf(i),warn=st.some(s=>closedOn(s,i));
@@ -215,8 +235,46 @@ function renderTrip(){
       <span class="tx"><span class="meta"><span>Tag ${i+1} · ${WD[d.getDay()]} ${fmt(d)}</span><span>${esc(D.stadt)}</span></span>
       <h3>${esc(D.titel)}</h3>${warn?'<span><span class="pill warn">Ruhetag prüfen</span></span>':""}
       <span class="bar"><i style="width:${st.length?done/st.length*100:0}%"></i></span></span></button>`});
-  $("#v-trip").innerHTML=h+`</div>`;
+  $("#v-trip").innerHTML=h+`</div></div>`;
+  const q=$("#q");
+  q.addEventListener("input",()=>{searchQ=q.value;runSearch()});
+  $("#qClear").addEventListener("click",()=>{searchQ="";q.value="";runSearch();q.focus()});
+  runSearch();
 }
+/* ---------- Suche ---------- */
+let searchQ="",searchKind="Alle";
+const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function allPlaces(){
+  const out=[];
+  TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.typ==="Fahrt")return;out.push({name:s.name,info:s.info,typ:s.typ,stadt:D.stadt,day:i,zeit:s.zeit,maps:s.maps,photo:s.photo,ownImg:s.ownImg,tiktok:s.tiktok})}));
+  S.places.filter(p=>p.day==null).forEach(p=>out.push({name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,tiktok:p.url||null}));
+  return out;
+}
+function hl(text,terms){let t=esc(text);terms.forEach(w=>{if(!w)return;const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");t=t.replace(re,"<mark>$1</mark>")});return t}
+function runSearch(){
+  const box=$("#results"),main=$("#tripMain");if(!box)return;
+  const terms=norm(searchQ).split(/\s+/).filter(Boolean);
+  document.querySelectorAll(".filters button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.kind===searchKind));
+  $("#qClear").hidden=!searchQ;
+  const active=terms.length||searchKind!=="Alle";
+  main.hidden=!!active;box.hidden=!active;
+  if(!active){box.innerHTML="";return}
+  const hits=allPlaces().filter(p=>(searchKind==="Alle"||p.typ===searchKind)&&terms.every(w=>norm([p.name,p.info,p.stadt,p.typ].join(" ")).includes(w)));
+  let h=`<p class="count">${hits.length?hits.length+(hits.length===1?" Treffer":" Treffer"):"Nichts gefunden."}${hits.length?" · Name antippen öffnet Google Maps":""}</p><div class="list">`;
+  hits.forEach(p=>{const raw=searchQ.trim().split(/\s+/);
+    h+=`<div class="hit"><a class="thumblink" href="${p.maps}" target="_blank" rel="noopener" aria-label="${esc(p.name)} in Google Maps">${p.photo?`<img src="photos/${p.photo}.jpg" alt="" loading="lazy">`:p.ownImg?`<img data-img="${p.ownImg}" alt="">`:'<span class="ph"></span>'}</a>
+      <div class="tx"><span class="kind">${esc(p.typ)} · ${esc(p.stadt)}</span>
+      <a class="namelink" href="${p.maps}" target="_blank" rel="noopener"><b>${hl(p.name,raw)}</b>${PIN}</a>
+      ${p.info?`<span class="muted small">${hl(p.info,raw)}</span>`:""}
+      <div class="actions">${p.day!=null?`<button class="chip" data-day="${p.day}">Tag ${p.day+1} · ${WD[dateOf(p.day).getDay()]} ${fmt(dateOf(p.day))}${p.zeit?" · "+esc(p.zeit):""}</button>`:`<button class="chip" data-gowish>Merkliste</button>`}
+      ${p.tiktok?`<a class="chip" href="${esc(p.tiktok)}" target="_blank" rel="noopener">TikTok</a>`:""}</div></div></div>`});
+  box.innerHTML=h+"</div>";hydrate(box);
+}
+document.addEventListener("click",e=>{
+  const k=e.target.closest("[data-kind]");if(k){searchKind=k.dataset.kind;runSearch();return}
+  if(e.target.closest("[data-gowish]"))goTab("wish");
+});
+const PIN=`<svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
 document.addEventListener("click",e=>{const d=e.target.closest("[data-day]");if(d&&!e.target.closest("select")){openDay(+d.dataset.day)}});
 
 /* ---------- Tag ---------- */
@@ -227,8 +285,8 @@ function renderDay(){
     <p class="muted small" style="margin:6px 0 16px"><span class="pill city">${esc(D.stadt)}</span> Übernachtung: ${esc(D.unterkunft)}</p><ol class="tl">`;
   st.forEach(s=>{const done=!!S.done[s.id],b=s.reservierung?bookState(s.id):null;
     h+=`<li><div class="time">${esc(s.zeit)}</div><div class="stop ${done?"done":""}">
-      ${s.photo&&s.photo!==D.photo?`<img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy">`:s.ownImg?`<figure style="margin:0"><img class="thumb" data-img="${s.ownImg}" alt=""></figure>`:""}
-      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}</div>${esc(s.name)}</div>
+      ${s.photo&&s.photo!==D.photo?`<a class="thumblink" href="${s.maps}" target="_blank" rel="noopener" aria-label="${esc(s.name)} in Google Maps"><img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy"></a>`:s.ownImg?`<figure style="margin:0"><a class="thumblink" href="${s.maps}" target="_blank" rel="noopener"><img class="thumb" data-img="${s.ownImg}" alt=""></a></figure>`:""}
+      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
       <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
       ${s.info?`<div class="muted small">${esc(s.info)}</div>`:""}
       ${closedOn(s,i)?`<div class="flag">An einem ${WD[d.getDay()]} meist geschlossen. Tag tauschen oder Öffnungszeiten prüfen.</div>`:""}
