@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Japan Mai</title>
+<meta name="theme-color" content="#172E46">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Japan Mai">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+/* Indigo-Reiseheft: Papierweiß, Tintenindigo, Stempelrot (aus dem newly-Design übernommen) */
+:root{
+  --bg:#F5F6F4; --fg:#172E46; --surface:#FFFFFF; --surface2:#E9EDF0; --line:#DCE3E8;
+  --muted:#637486; --accent:#172E46; --on-accent:#FFFFFF; --stamp:#BC4334; --stamp-soft:#F5E1DE;
+  --ok:#387268; --ok-soft:#DCEBE7; --warn:#936220; --warn-soft:#F4EAD9;
+  --serif:ui-serif,"New York","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --tab-h:58px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#101C2B; --fg:#F1F4F6; --surface:#172E46; --surface2:#213A50; --line:#304A60;
+  --muted:#A7B7C6; --accent:#B9D2E6; --on-accent:#101C2B; --stamp:#F68C7A; --stamp-soft:#3B2A31;
+  --ok:#8DC5AF; --ok-soft:#1E3A3A; --warn:#EBC48B; --warn-soft:#3A3326; color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.45}
+body{padding-top:env(safe-area-inset-top,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+img{max-width:100%;display:block}
+a{color:inherit}
+.screen{padding:12px max(16px,env(safe-area-inset-left,0px)) calc(var(--tab-h) + 28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));max-width:720px;margin:0 auto}
+.screen[hidden]{display:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--serif);font-weight:700;font-size:2rem;line-height:1.05;margin:2px 0 0;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:700;font-size:1.35rem;margin:26px 0 10px}
+h3{font-size:1rem;margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+/* Tab bar */
+nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:4px max(8px,env(safe-area-inset-left,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+nav.tabbar button{border:0;background:none;height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.7rem;color:var(--muted);font-weight:500}
+nav.tabbar button svg{width:24px;height:24px}
+nav.tabbar button[aria-current="true"]{color:var(--stamp)}
+/* Day list */
+.today{background:var(--accent);color:var(--on-accent);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;width:100%;text-align:left}
+.today b{font-family:var(--serif);font-size:1.2rem;display:block}
+.days{display:flex;flex-direction:column;gap:12px}
+.dcard{display:grid;grid-template-columns:96px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:0;text-align:left;width:100%}
+.dcard img,.dcard .ph{width:96px;height:100%;min-height:96px;object-fit:cover;background:var(--surface2)}
+.dcard .tx{padding:10px 12px 10px 0;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dcard .meta{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.dcard h3{font-family:var(--serif);font-size:1.08rem;line-height:1.2}
+.bar{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:auto}
+.bar i{display:block;height:100%;background:var(--stamp)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.city{background:var(--surface2);color:var(--fg)}
+/* Day detail */
+.hero{margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 14px;position:relative}
+.hero img{width:100%;aspect-ratio:16/10;object-fit:cover;max-height:300px}
+.back{position:absolute;top:10px;left:max(12px,env(safe-area-inset-left,0px));width:40px;height:40px;border-radius:50%;border:0;background:rgba(16,28,43,.6);color:#fff;font-size:1.3rem;display:grid;place-items:center}
+.back.plain{position:static;background:var(--surface2);color:var(--fg)}
+.daynav{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
+.tl{list-style:none;margin:0;padding:0}
+.tl>li{display:grid;grid-template-columns:48px 1fr;gap:10px;position:relative;padding-bottom:14px}
+.tl>li::before{content:"";position:absolute;left:23px;top:26px;bottom:0;width:1px;background:var(--line)}
+.tl>li:last-child::before{display:none}
+.time{font-variant-numeric:tabular-nums;font-size:.82rem;color:var(--muted);text-align:right;padding-top:12px;font-weight:600}
+.stop{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.stop .body{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.stop .row{display:flex;gap:10px;align-items:flex-start}
+.stop .name{font-weight:650;flex:1;min-width:0}
+.stop .thumb{width:100%;aspect-ratio:21/9;object-fit:cover}
+.stop.done .name{text-decoration:line-through;text-decoration-color:var(--stamp)}
+.stop.done .thumb{filter:grayscale(.6);opacity:.7}
+.kind{font-size:.66rem;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.stamp{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:2px dashed var(--line);background:none;display:grid;place-items:center;color:transparent;transition:transform .2s}
+.stamp[aria-pressed="true"]{border:2px solid var(--stamp);color:var(--stamp);transform:rotate(-12deg);background:var(--stamp-soft)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.84rem;text-decoration:none;font-weight:500}
+.chip.s-offen{border-color:var(--stamp);color:var(--stamp)}
+.chip.s-angefragt{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.chip.s-bestätigt{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+.flag{font-size:.82rem;padding:6px 10px;border-radius:8px;background:var(--warn-soft);color:var(--warn)}
+.own{color:var(--stamp);font-size:.66rem;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-left:6px}
+/* Forms and cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field>span{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-size:16px}
+.field textarea{min-height:76px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:380px){.grid2{grid-template-columns:1fr}}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 16px;font-weight:600;text-align:center;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn.danger{color:var(--stamp);border-color:var(--stamp)}
+.btn:disabled{opacity:.45}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.item .head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.item .head b{display:block}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface2);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:8px;padding:7px 4px;font-size:.84rem;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.shots figure{margin:0;position:relative}
+.shots img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.shots .x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(16,28,43,.7);color:#fff;font-size:.9rem}
+.addshot{aspect-ratio:1;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;color:var(--muted);font-size:.8rem;text-align:center;padding:6px;position:relative;overflow:hidden}
+.addshot input{position:absolute;inset:0;opacity:0}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+details+details{margin-top:8px}
+summary{font-weight:650;cursor:pointer}
+details li,details p{color:var(--muted);font-size:.92rem}
+details ul{padding-left:18px;margin:8px 0 2px}
+.status{font-size:.86rem;color:var(--muted)}
+.status.err{color:var(--stamp)}
+.install{background:var(--stamp-soft);color:var(--fg);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:.92rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tab-h) + 22px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:.9rem;z-index:30;max-width:90vw}
+.viewer{position:fixed;inset:0;z-index:40;background:rgba(8,14,22,.92);display:grid;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.viewer img{max-height:100%;object-fit:contain;border-radius:8px}
+.credit{font-size:.78rem;color:var(--muted);word-break:break-word}
+:focus-visible{outline:2px solid var(--stamp);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<section class="screen" id="v-trip"></section>
+<section class="screen" id="v-day" hidden></section>
+<section class="screen" id="v-book" hidden></section>
+<section class="screen" id="v-wish" hidden></section>
+<section class="screen" id="v-more" hidden></section>
+
+<nav class="tabbar" aria-label="Bereiche">
+  <button data-tab="trip" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5 9 4l6 2 5-1.5V18l-5 1.5-6-2-5 1.5z"/><path d="M9 4v13.5M15 6v13.5"/></svg>Reise</button>
+  <button data-tab="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg>Buchungen</button>
+  <button data-tab="wish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Merkliste</button>
+  <button data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mehr</button>
+</nav>
+<div class="toast" id="toast" hidden></div>
+<div class="viewer" id="viewer" hidden><img alt=""></div>
+
+<script src="data.js"></script>
+<script>
+const TRIP=window.TRIP, CREDITS=window.CREDITS||[];
+const WD=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const STATES=["offen","angefragt","bestätigt"];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mapUrl=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
+
+/* ---------- Speicher ---------- */
+const KEY="jm-state-v1";
+let S={start:TRIP[0].datum,done:{},book:{},notes:{},journal:{},places:[]};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S={...S,...s}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Speichern fehlgeschlagen. Speicher voll?")}}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+
+// Bilder (Tagebuch, Buchungsbelege, Screenshots) in IndexedDB
+const IDB=new Promise((res,rej)=>{const r=indexedDB.open("jm-images",1);r.onupgradeneeded=()=>r.result.createObjectStore("img");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function imgPut(blob){const id="i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);const db=await IDB;
+  await new Promise((res,rej)=>{const t=db.transaction("img","readwrite");t.objectStore("img").put(blob,id);t.oncomplete=res;t.onerror=()=>rej(t.error)});return id}
+async function imgGet(id){const db=await IDB;return new Promise(res=>{const r=db.transaction("img").objectStore("img").get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}
+async function imgDel(id){const db=await IDB;db.transaction("img","readwrite").objectStore("img").delete(id)}
+async function imgAll(){const db=await IDB;return new Promise(res=>{const out={};const r=db.transaction("img").objectStore("img").openCursor();r.onsuccess=()=>{const c=r.result;if(c){out[c.key]=c.value;c.continue()}else res(out)}})}
+const urlCache={};
+async function imgUrl(id){if(urlCache[id])return urlCache[id];const b=await imgGet(id);if(!b)return null;return urlCache[id]=URL.createObjectURL(b)}
+function shrink(file,max=1600){return new Promise(res=>{const u=URL.createObjectURL(file);const im=new Image();
+  im.onload=()=>{const r=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>res(b||file),"image/jpeg",.82)};
+  im.onerror=()=>{URL.revokeObjectURL(u);res(file)};im.src=u})}
+// Bilder nach dem Rendern nachladen
+async function hydrate(root){for(const el of root.querySelectorAll("img[data-img]")){const u=await imgUrl(el.dataset.img);if(u)el.src=u;else el.closest("figure")?.remove()}}
+
+/* ---------- Daten ---------- */
+function dateOf(i){const d=new Date(S.start+"T12:00:00");d.setDate(d.getDate()+i);return d}
+const fmt=d=>d.getDate()+"."+(d.getMonth()+1)+".";
+const fmtLong=d=>d.toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long"});
+function stopsOf(i){
+  const base=TRIP[i].stops.map(s=>({...s,own:false}));
+  const own=S.places.filter(p=>p.day===i).map(p=>({id:"p-"+p.id,zeit:p.time||"12:00",typ:p.kind||"Essen",name:p.name,info:p.info,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),tiktok:p.url||null,
+    reservierung:p.res?{art:p.res}:null,ruhetage:[],photo:null,ownImg:p.img||null,own:true,pid:p.id}));
+  return [...base,...own].sort((a,b)=>a.zeit.localeCompare(b.zeit));
+}
+const closedOn=(s,i)=>s.ruhetage&&s.ruhetage.includes(WD[dateOf(i).getDay()]);
+function todayIndex(){const t=new Date();t.setHours(12,0,0,0);const d0=new Date(S.start+"T12:00:00");const n=Math.round((t-d0)/864e5);return n>=0&&n<14?n:-1}
+function bookState(id){return S.book[id]||{status:"offen",number:"",imgs:[]}}
+
+/* ---------- Navigation ---------- */
+let tab="trip",curDay=0;
+function show(v){document.querySelectorAll(".screen").forEach(s=>s.hidden=s.id!=="v-"+v);window.scrollTo(0,0)}
+function goTab(t){tab=t;document.querySelectorAll("nav.tabbar button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===t));
+  ({trip:renderTrip,book:renderBook,wish:renderWish,more:renderMore})[t]();show(t)}
+function openDay(i){curDay=i;renderDay();show("day")}
+document.querySelector("nav.tabbar").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(b)goTab(b.dataset.tab)});
+
+/* ---------- Reise ---------- */
+const isStandalone=()=>window.navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
+function renderTrip(){
+  const ti=todayIndex();
+  let h=`<div class="topbar"><div><div class="eyebrow">${fmt(dateOf(0))} – ${fmt(dateOf(13))} · 14 Tage</div><h1>Japan im Mai</h1></div></div>`;
+  if(!isStandalone())h+=`<div class="install"><b>Als App installieren:</b> In Safari unten auf <b>Teilen</b> tippen, dann <b>Zum Home-Bildschirm</b>. Danach startet Japan Mai wie eine App und funktioniert auch ohne Netz.</div>`;
+  if(ti>=0)h+=`<button class="today" data-day="${ti}"><span><span class="eyebrow" style="color:inherit;opacity:.75">Heute · Tag ${ti+1}</span><b>${esc(TRIP[ti].titel)}</b></span><span>›</span></button>`;
+  h+=`<div class="days">`;
+  TRIP.forEach((D,i)=>{const st=stopsOf(i),done=st.filter(s=>S.done[s.id]).length,d=dateOf(i),warn=st.some(s=>closedOn(s,i));
+    h+=`<button class="dcard" data-day="${i}">${D.photo?`<img src="photos/${D.photo}.jpg" alt="" loading="lazy">`:'<span class="ph"></span>'}
+      <span class="tx"><span class="meta"><span>Tag ${i+1} · ${WD[d.getDay()]} ${fmt(d)}</span><span>${esc(D.stadt)}</span></span>
+      <h3>${esc(D.titel)}</h3>${warn?'<span><span class="pill warn">Ruhetag prüfen</span></span>':""}
+      <span class="bar"><i style="width:${st.length?done/st.length*100:0}%"></i></span></span></button>`});
+  $("#v-trip").innerHTML=h+`</div>`;
+}
+document.addEventListener("click",e=>{const d=e.target.closest("[data-day]");if(d&&!e.target.closest("select")){openDay(+d.dataset.day)}});
+
+/* ---------- Tag ---------- */
+function renderDay(){
+  const i=curDay,D=TRIP[i],d=dateOf(i),st=stopsOf(i);
+  let h=`<div class="hero">${D.photo?`<img src="photos/${D.photo}.jpg" alt="">`:""}<button class="back" data-back aria-label="Zurück">‹</button></div>
+    <div class="eyebrow">Tag ${i+1} · ${fmtLong(d)}</div><h1>${esc(D.titel)}</h1>
+    <p class="muted small" style="margin:6px 0 16px"><span class="pill city">${esc(D.stadt)}</span> Übernachtung: ${esc(D.unterkunft)}</p><ol class="tl">`;
+  st.forEach(s=>{const done=!!S.done[s.id],b=s.reservierung?bookState(s.id):null;
+    h+=`<li><div class="time">${esc(s.zeit)}</div><div class="stop ${done?"done":""}">
+      ${s.photo&&s.photo!==D.photo?`<img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy">`:s.ownImg?`<figure style="margin:0"><img class="thumb" data-img="${s.ownImg}" alt=""></figure>`:""}
+      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}</div>${esc(s.name)}</div>
+      <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
+      ${s.info?`<div class="muted small">${esc(s.info)}</div>`:""}
+      ${closedOn(s,i)?`<div class="flag">An einem ${WD[d.getDay()]} meist geschlossen. Tag tauschen oder Öffnungszeiten prüfen.</div>`:""}
+      <div class="actions"><a class="chip" href="${s.maps}" target="_blank" rel="noopener">Karte</a>
+      ${s.tiktok?`<a class="chip" href="${esc(s.tiktok)}" target="_blank" rel="noopener">TikTok</a>`:""}
+      ${b?`<button class="chip s-${b.status}" data-gobook="${s.id}">Buchung: ${b.status}</button>`:""}
+      ${s.own?`<button class="chip" data-unplan="${s.pid}">Aus dem Tag nehmen</button>`:""}</div></div></div></li>`});
+  h+=`</ol><h2>Tagebuch</h2><div class="card"><label class="field"><span>Notizen</span><textarea id="dayNote" placeholder="Was war heute besonders? Adressen, Bestätigungen …">${esc(S.notes[i]||"")}</textarea></label>
+    <div class="shots" id="dayShots">${(S.journal[i]||[]).map(id=>`<figure><img data-img="${id}" data-view alt=""><button class="x" data-deljournal="${id}" aria-label="Foto löschen">×</button></figure>`).join("")}
+    <label class="addshot">+ Foto<input type="file" accept="image/*" multiple id="journalIn"></label></div></div>
+    <div class="daynav"><button class="btn" data-day="${Math.max(0,i-1)}" ${i===0?"disabled":""}>‹ Tag ${i}</button><button class="btn" data-day="${Math.min(13,i+1)}" ${i===13?"disabled":""}>Tag ${i+2} ›</button></div>`;
+  const v=$("#v-day");v.innerHTML=h;hydrate(v);
+  $("#dayNote").addEventListener("input",e=>{S.notes[i]=e.target.value;save()});
+  $("#journalIn").addEventListener("change",async e=>{for(const f of e.target.files){const id=await imgPut(await shrink(f));(S.journal[i]=S.journal[i]||[]).push(id)}save();renderDay();toast("Foto gespeichert")});
+}
+document.addEventListener("click",async e=>{
+  const t=e.target;
+  if(t.closest("[data-back]")){goTab(tab);return}
+  const dn=t.closest("[data-done]");if(dn){const id=dn.dataset.done;S.done[id]=!S.done[id];save();renderDay();if(S.done[id])toast("Abgestempelt");return}
+  const gb=t.closest("[data-gobook]");if(gb){goTab("book");setTimeout(()=>document.getElementById("b-"+gb.dataset.gobook)?.scrollIntoView({block:"center"}),50);return}
+  const up=t.closest("[data-unplan]");if(up){const p=S.places.find(x=>x.id===up.dataset.unplan);if(p){p.day=null;save();renderDay();toast("Zurück auf der Merkliste")}return}
+  const dj=t.closest("[data-deljournal]");if(dj){const id=dj.dataset.deljournal;S.journal[curDay]=(S.journal[curDay]||[]).filter(x=>x!==id);imgDel(id);save();renderDay();return}
+  const vw=t.closest("img[data-view]");if(vw){const v=$("#viewer");v.querySelector("img").src=vw.src;v.hidden=false;return}
+  if(t.closest("#viewer")){$("#viewer").hidden=true}
+});
+
+/* ---------- Buchungen ---------- */
+function renderBook(){
+  let h=`<div class="topbar"><div><div class="eyebrow">Reservierungen</div><h1>Buchungen</h1></div></div>`;
+  const all=[];TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.reservierung)all.push({s,i})}));
+  const open=all.filter(x=>bookState(x.s.id).status!=="bestätigt").length;
+  h+=`<p class="muted" style="margin-top:-4px">${open?`${open} von ${all.length} noch nicht bestätigt.`:"Alles bestätigt."}</p><div class="list">`;
+  all.forEach(({s,i})=>{const b=bookState(s.id);
+    h+=`<div class="item" id="b-${s.id}"><div class="head"><div><span class="eyebrow">Tag ${i+1} · ${WD[dateOf(i).getDay()]} ${fmt(dateOf(i))} · ${esc(s.zeit)}</span><b>${esc(s.name)}</b><span class="muted small">Reservierung ${esc(s.reservierung.art)}</span></div></div>
+      <div class="seg">${STATES.map(x=>`<button data-bstat="${s.id}" data-v="${x}" aria-pressed="${b.status===x}">${x}</button>`).join("")}</div>
+      <label class="field"><span>Bestätigungsnummer</span><input data-bnum="${s.id}" value="${esc(b.number)}" placeholder="z. B. TC-48213" autocomplete="off"></label>
+      <div class="shots">${(b.imgs||[]).map(id=>`<figure><img data-img="${id}" data-view alt="Buchungsbeleg"><button class="x" data-delbimg="${s.id}" data-id="${id}" aria-label="Beleg löschen">×</button></figure>`).join("")}
+      <label class="addshot">+ Beleg-Screenshot<input type="file" accept="image/*" data-bimg="${s.id}"></label></div></div>`});
+  h+=`</div><h2>So reservierst du</h2>
+  <details><summary>TableCheck & OMAKASE</summary><p>Viele gehobene Lokale nehmen Buchungen auf Englisch über TableCheck oder OMAKASE an, oft mit Kreditkarten-Garantie. Top-Adressen öffnen 30–60 Tage vorher.</p></details>
+  <details><summary>Hotel-Concierge</summary><p>Für Lokale ohne Online-Buchung oder nur mit japanischer Telefonnummer: den Concierge vor der Reise per E-Mail bitten. Gut für Kashiwaya.</p></details>
+  <details><summary>Ohne Reservierung</summary><p>Umegaoka Sushi no Midori, Ramen- und Okonomiyaki-Läden nehmen keine Buchungen. Vor Öffnung anstellen spart oft eine Stunde.</p></details>
+  <details><summary>No-Show</summary><p>Wer nicht absagt, zahlt oft den vollen Preis. Rechtzeitig über dieselbe Plattform stornieren.</p></details>`;
+  const v=$("#v-book");v.innerHTML=h;hydrate(v);
+}
+function setBook(id,patch){S.book[id]={...bookState(id),...patch};save()}
+document.addEventListener("click",e=>{
+  const bs=e.target.closest("[data-bstat]");if(bs){setBook(bs.dataset.bstat,{status:bs.dataset.v});renderBook();return}
+  const bd=e.target.closest("[data-delbimg]");if(bd){const id=bd.dataset.id,b=bookState(bd.dataset.delbimg);setBook(bd.dataset.delbimg,{imgs:(b.imgs||[]).filter(x=>x!==id)});imgDel(id);renderBook()}
+});
+document.addEventListener("input",e=>{const n=e.target.dataset.bnum;if(n!==undefined)setBook(n,{number:e.target.value})});
+document.addEventListener("change",async e=>{const bi=e.target.dataset.bimg;if(bi!==undefined&&e.target.files[0]){const id=await imgPut(await shrink(e.target.files[0]));const b=bookState(bi);setBook(bi,{imgs:[...(b.imgs||[]),id]});renderBook();toast("Beleg gespeichert")}});
+
+/* ---------- Merkliste & TikTok ---------- */
+let draftImg=null;
+function dayOpts(sel){return `<option value="">Noch kein Tag</option>`+TRIP.map((D,i)=>`<option value="${i}" ${sel===i?"selected":""}>Tag ${i+1} · ${WD[dateOf(i).getDay()]} ${fmt(dateOf(i))} · ${esc(D.stadt)}</option>`).join("")}
+function claudePrompt(link,text){
+  return `Ich plane eine Japanreise und habe ein TikTok-Video gefunden. Finde heraus, welches Restaurant oder welche Sehenswürdigkeit gemeint ist. Schau dir dazu den Link und die Bildunterschrift an und such im Web, falls nötig.
+
+TikTok-Link: ${link||"(keiner)"}
+Bildunterschrift: ${text||"(keine)"}
+
+Meine Route: ${TRIP.map((D,i)=>`Tag ${i+1} ${D.stadt}`).join(", ")}.
+
+Antworte am Ende mit genau einer Zeile JSON, sonst nichts in dieser Zeile:
+{"name":"…","stadt":"…","typ":"Essen|Sehen|Abend","info":"ein kurzer deutscher Satz","maps":"Suchbegriff für Google Maps","reservierung":"|empfohlen|nötig","tag":1-14 oder null,"zeit":"HH:MM"}`;
+}
+function renderWish(){
+  const ideas=S.places.filter(p=>p.day==null),planned=S.places.filter(p=>p.day!=null);
+  let h=`<div class="topbar"><div><div class="eyebrow">Aus TikTok & Co.</div><h1>Merkliste</h1></div></div>
+  <form class="card" id="wishForm" autocomplete="off">
+    <p class="muted small" style="margin:0">In TikTok auf <b>Teilen → Link kopieren</b>, hier einfügen. Bildunterschrift oder Screenshot helfen beim Erkennen.</p>
+    <label class="field"><span>TikTok-Link</span><input id="wLink" type="url" inputmode="url" placeholder="https://www.tiktok.com/…"></label>
+    <div class="btnrow"><button type="button" class="btn" id="pasteBtn">Aus Zwischenablage einfügen</button></div>
+    <label class="field"><span>Bildunterschrift (optional)</span><textarea id="wText" placeholder="Text aus dem Video kopieren"></textarea></label>
+    <details style="background:var(--bg)"><summary>Mit Claude erkennen (kostenlos)</summary>
+      <p>Öffnet Claude mit einer fertigen Frage. Claude antwortet mit einer Zeile JSON: diese kopieren und unten einfügen. Die Felder füllen sich dann von selbst.</p>
+      <div class="btnrow"><button type="button" class="btn primary" id="askClaude">Frage kopieren & Claude öffnen</button></div>
+      <label class="field" style="margin-top:10px"><span>Antwort von Claude</span><textarea id="wAnswer" placeholder='{"name":"…"}'></textarea></label>
+      <div class="status" id="ansStatus"></div>
+    </details>
+    <div class="grid2"><label class="field"><span>Name</span><input id="wName" placeholder="Restaurant oder Ort"></label><label class="field"><span>Stadt</span><input id="wCity" placeholder="z. B. Osaka"></label></div>
+    <label class="field"><span>Notiz</span><textarea id="wInfo" placeholder="Was wird empfohlen?"></textarea></label>
+    <div class="grid2"><label class="field"><span>Art</span><select id="wKind"><option>Essen</option><option>Sehen</option><option>Abend</option></select></label>
+      <label class="field"><span>Reservierung</span><select id="wRes"><option value="">keine nötig</option><option>empfohlen</option><option>nötig</option></select></label></div>
+    <div class="grid2"><label class="field"><span>Tag</span><select id="wDay">${dayOpts(null)}</select></label><label class="field"><span>Uhrzeit</span><input id="wTime" type="time" value="19:00"></label></div>
+    <label class="field"><span>Suchbegriff Google Maps</span><input id="wQ" placeholder="Name + Stadt"></label>
+    <div class="shots"><label class="addshot" id="wImgBox">+ Screenshot<input type="file" accept="image/*" id="wImg"></label></div>
+    <button class="btn primary" type="submit">Speichern</button><div class="status" id="wStatus"></div>
+  </form>`;
+  const card=p=>`<div class="item"><div class="head"><div><b>${esc(p.name)}</b><span class="muted small">${esc([p.kind,p.city,p.info].filter(Boolean).join(" · "))}</span></div>${p.img?`<figure style="margin:0;width:56px;flex:0 0 auto"><img data-img="${p.img}" data-view alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px"></figure>`:""}</div>
+    <div class="actions"><a class="chip" href="${mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a>${p.url?`<a class="chip" href="${esc(p.url)}" target="_blank" rel="noopener">TikTok</a>`:""}<button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
+    <label class="field"><span>Tag</span><select data-plday="${p.id}">${dayOpts(p.day)}</select></label></div>`;
+  h+=`<h2>Ohne Tag (${ideas.length})</h2><div class="list">${ideas.length?ideas.map(card).join(""):'<p class="muted">Noch nichts gemerkt.</p>'}</div>`;
+  if(planned.length)h+=`<h2>Schon eingeplant (${planned.length})</h2><div class="list">${planned.map(card).join("")}</div>`;
+  const v=$("#v-wish");v.innerHTML=h;hydrate(v);
+  $("#pasteBtn").onclick=async()=>{try{const t=await navigator.clipboard.readText();if(/^https?:\/\//.test(t.trim()))$("#wLink").value=t.trim();else $("#wText").value=t}catch(e){toast("Lange ins Feld tippen und Einsetzen wählen")}};
+  $("#askClaude").onclick=async()=>{const p=claudePrompt($("#wLink").value.trim(),$("#wText").value.trim());
+    try{await navigator.clipboard.writeText(p);toast("Frage kopiert")}catch(e){}
+    window.open("https://claude.ai/new?q="+encodeURIComponent(p),"_blank")};
+  $("#wAnswer").oninput=e=>fillFromAnswer(e.target.value);
+  $("#wImg").onchange=async e=>{const f=e.target.files[0];if(!f)return;draftImg=await shrink(f,1200);$("#wImgBox").style.backgroundImage=`url(${URL.createObjectURL(draftImg)})`;$("#wImgBox").style.backgroundSize="cover";$("#wImgBox").firstChild.textContent=""};
+  $("#wishForm").onsubmit=async e=>{e.preventDefault();const v=id=>$(id).value.trim();
+    if(!v("#wName")){$("#wStatus").textContent="Bitte einen Namen eintragen.";$("#wStatus").className="status err";return}
+    const day=v("#wDay")===""?null:+v("#wDay");
+    const p={id:Date.now().toString(36),name:v("#wName"),city:v("#wCity"),info:v("#wInfo"),kind:v("#wKind"),res:v("#wRes"),day,time:v("#wTime")||"12:00",q:v("#wQ"),url:/^https?:\/\//.test(v("#wLink"))?v("#wLink"):""};
+    if(draftImg)p.img=await imgPut(draftImg);draftImg=null;
+    S.places.push(p);save();renderWish();toast(day==null?"Auf der Merkliste":`In Tag ${day+1} eingeplant`)};
+}
+function fillFromAnswer(txt){
+  const st=$("#ansStatus");const m=txt.match(/\{[\s\S]*\}/);if(!m){st.textContent="";return}
+  try{const r=JSON.parse(m[0]);const set=(id,val)=>{if(val!=null&&val!=="")$(id).value=val};
+    set("#wName",r.name);set("#wCity",r.stadt);set("#wInfo",r.info);set("#wQ",r.maps);
+    if(["Essen","Sehen","Abend"].includes(r.typ))$("#wKind").value=r.typ;
+    $("#wRes").value=["empfohlen","nötig"].includes(r.reservierung)?r.reservierung:"";
+    if(/^\d{1,2}:\d{2}$/.test(r.zeit||""))$("#wTime").value=r.zeit.padStart(5,"0");
+    const t=+r.tag;$("#wDay").value=t>=1&&t<=14?String(t-1):"";
+    st.textContent="Übernommen. Kurz prüfen, dann speichern.";st.className="status"}
+  catch(e){st.textContent="Das ist kein gültiges JSON. Nur die eine Zeile mit { … } einfügen.";st.className="status err"}
+}
+let armed=null;
+document.addEventListener("click",e=>{const d=e.target.closest("[data-delplace]");if(!d)return;const id=d.dataset.delplace;
+  if(armed===id){const p=S.places.find(x=>x.id===id);if(p?.img)imgDel(p.img);S.places=S.places.filter(x=>x.id!==id);armed=null;save()}else armed=id;renderWish()});
+document.addEventListener("change",e=>{const id=e.target.dataset.plday;if(id===undefined)return;const p=S.places.find(x=>x.id===id);
+  if(p){p.day=e.target.value===""?null:+e.target.value;save();renderWish();toast(p.day==null?"Ohne Tag":`Zu Tag ${p.day+1}`)}});
+
+/* ---------- Mehr ---------- */
+function renderMore(){
+  let h=`<div class="topbar"><div><div class="eyebrow">Einstellungen & Wissen</div><h1>Mehr</h1></div></div>
+  <div class="card"><label class="field"><span>Anreisetag (Tag 1)</span><input type="date" id="startIn" value="${S.start}"></label>
+  <p class="muted small" style="margin:0">Alle Daten und Ruhetag-Hinweise richten sich danach.</p></div>
+  <h2>Tipps</h2>
+  <details><summary>Internet am Handy (eSIM)</summary><ul><li>eSIM vor dem Abflug installieren, in Japan nur aktivieren: z. B. Ubigi, Airalo oder Japan SIM (au-Netz).</li><li>10–20 GB reichen für 14 Tage mit viel Karten und Übersetzer.</li><li>Datenroaming der österreichischen SIM ausschalten.</li></ul></details>
+  <details><summary>Suica / IC-Karte</summary><ul><li>iPhone: Welcome Suica Mobile oder Suica direkt in Apple Wallet, Aufladen per Apple Pay.</li><li>Gilt in Tokyo, Kyoto, Osaka, Kobe und Hiroshima für Bahn, Bus und Konbini.</li><li>Shinkansen braucht ein eigenes Ticket (smartEX-App).</li></ul></details>
+  <details><summary>JR Pass oder Einzeltickets?</summary><ul><li>Für diese Route sind Einzeltickets meist günstiger als der landesweite JR Pass. Vorher mit dem JR-Pass-Rechner prüfen.</li><li>Regionale Pässe können sich für Tag 7–14 lohnen.</li></ul></details>
+  <details><summary>Gepäck vorausschicken</summary><ul><li>Takkyubin an der Hotelrezeption, ca. 2.000–3.000 Yen, Ankunft am Folgetag.</li><li>Sinnvoll Tokyo→Kyoto und Osaka→Hiroshima, damit Naoshima mit Tagesrucksack geht.</li></ul></details>
+  <details><summary>Geld, Einreise, Strom</summary><ul><li>Visit Japan Web vorab ausfüllen.</li><li>7-Eleven- und Japan-Post-Automaten nehmen ausländische Karten. Etwas Bargeld für kleine Lokale.</li><li>Kein Trinkgeld. Steckdosen Typ A, 100 V.</li></ul></details>
+  <details><summary>Golden Week</summary><p>Ca. 29. April bis 6. Mai ist halb Japan unterwegs. Mitte bis Ende Mai ist ruhiger und angenehm warm.</p></details>
+  <h2>Sicherung</h2>
+  <div class="card"><p class="muted small" style="margin:0">Alles liegt nur auf diesem iPhone. Vor dem Abflug eine Sicherung in „Dateien“ ablegen.</p>
+  <div class="btnrow"><button class="btn primary" id="exportBtn">Sicherung speichern</button><label class="btn" style="position:relative;overflow:hidden">Sicherung laden<input type="file" accept="application/json,.json" id="importIn" style="position:absolute;inset:0;opacity:0"></label></div><div class="status" id="bkStatus"></div></div>
+  <h2>Bildnachweise</h2><details><summary>${CREDITS.length} Fotos von Wikimedia Commons</summary><ul>${CREDITS.map(c=>`<li class="credit">${esc(c.title)}: ${esc(c.author)}, ${esc(c.license)} · <a href="${esc(c.source)}" target="_blank" rel="noopener">Quelle</a></li>`).join("")}</ul><p>Ortsbilder zeigen die Umgebung, nicht zwingend das genannte Restaurant.</p></details>`;
+  $("#v-more").innerHTML=h;
+  $("#startIn").onchange=e=>{if(e.target.value){S.start=e.target.value;save();toast("Datum geändert")}};
+  $("#exportBtn").onclick=exportBackup;
+  $("#importIn").onchange=e=>e.target.files[0]&&importBackup(e.target.files[0]);
+}
+const b64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function exportBackup(){
+  const imgs=await imgAll(),enc={};for(const k in imgs)enc[k]=await b64(imgs[k]);
+  const blob=new Blob([JSON.stringify({app:"japan-mai",v:1,state:S,images:enc})],{type:"application/json"});
+  const file=new File([blob],"japan-mai-sicherung.json",{type:"application/json"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Japan Mai Sicherung"});return}}catch(e){if(e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=file.name;a.click();$("#bkStatus").textContent="Sicherung heruntergeladen."}
+async function importBackup(f){try{const d=JSON.parse(await f.text());if(d.app!=="japan-mai")throw 0;
+  const db=await IDB;for(const k in d.images||{}){const blob=await (await fetch(d.images[k])).blob();await new Promise(r=>{const t=db.transaction("img","readwrite");t.objectStore("img").put(blob,k);t.oncomplete=r})}
+  S={...S,...d.state};save();toast("Sicherung geladen");goTab("trip")}catch(e){$("#bkStatus").textContent="Diese Datei ist keine Japan-Mai-Sicherung.";$("#bkStatus").className="status err"}}
+
+/* ---------- Start ---------- */
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2000)}
+goTab("trip");
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
