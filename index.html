@@ -67,6 +67,35 @@ nav.tabbar button[aria-current="true"]{color:var(--stamp)}
 a.namelink{text-decoration:none;color:inherit;display:inline}
 a.namelink .pin{display:inline-block;width:14px;height:14px;margin-left:5px;vertical-align:-1px;color:var(--stamp)}
 a.thumblink{display:block}
+.src{font-size:.78rem;color:var(--muted)}
+/* Tages-Story */
+.playbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 18px}
+.playbtn svg{width:18px;height:18px}
+.story{position:fixed;inset:0;z-index:50;background:#0b1320;color:#fff;overflow:hidden;user-select:none;-webkit-user-select:none}
+.story .bg{position:absolute;inset:-2%;background-size:cover;background-position:center;will-change:transform}
+.story .bg.kb{animation:kb var(--dur) linear forwards}
+.story .bg.soft{filter:blur(22px) brightness(.55) saturate(1.2);inset:-8%}
+@keyframes kb{from{transform:scale(1.02)}to{transform:scale(1.13) translate(-1.5%,-1%)}}
+.story .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,14,22,.6) 0,rgba(8,14,22,0) 20%,rgba(8,14,22,0) 42%,rgba(8,14,22,.9) 100%)}
+.story .bars{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);left:12px;right:12px;display:flex;gap:4px;z-index:3}
+.story .bars span{flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.story .bars i{display:block;height:100%;width:0;background:#fff}
+.story .head{position:absolute;top:calc(env(safe-area-inset-top,0px) + 20px);left:16px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:3;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.story .close{width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:1.4rem;line-height:1}
+.story .tap{position:absolute;inset:0;z-index:2;display:grid;grid-template-columns:1fr 2fr}
+.story .tap button{border:0;background:none}
+.story .txt{position:absolute;left:max(20px,env(safe-area-inset-left,0px));right:max(20px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 36px);z-index:2;pointer-events:none;animation:up .6s ease-out both;max-width:560px}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.story .stime{font-size:3rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.02em}
+.story .sk{display:inline-block;margin-left:10px;vertical-align:middle;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;background:#BC4334;padding:3px 8px;border-radius:999px}
+.story h2{font-family:var(--serif);font-size:2.1rem;margin:10px 0 8px;color:#fff;line-height:1.08;text-wrap:balance}
+.story p{margin:0;color:rgba(255,255,255,.86);font-size:1rem;max-width:38ch}
+.story .meta{margin-top:12px;font-size:.82rem;color:rgba(255,255,255,.7)}
+.story ol{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.95rem}
+.story ol b{display:inline-block;width:52px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.7);font-weight:600}
+.story .paused{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;background:rgba(0,0,0,.45);border-radius:999px;padding:8px 14px;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+@media (prefers-reduced-motion:reduce){.story .bg.kb,.story .txt{animation:none}}
+.src a{color:var(--stamp);font-weight:600;text-decoration:none}
 .dcard{display:grid;grid-template-columns:96px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:0;text-align:left;width:100%}
 .dcard img,.dcard .ph{width:96px;height:100%;min-height:96px;object-fit:cover;background:var(--surface2)}
 .dcard .tx{padding:10px 12px 10px 0;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -203,9 +232,13 @@ const fmtLong=d=>d.toLocaleDateString("de-AT",{weekday:"long",day:"numeric",mont
 function stopsOf(i){
   const base=TRIP[i].stops.map(s=>({...s,own:false}));
   const own=S.places.filter(p=>p.day===i).map(p=>({id:"p-"+p.id,zeit:p.time||"12:00",typ:p.kind||"Essen",name:p.name,info:p.info,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),tiktok:p.url||null,
-    reservierung:p.res?{art:p.res}:null,ruhetage:[],photo:null,ownImg:p.img||null,own:true,pid:p.id}));
+    reservierung:p.res?{art:p.res}:null,ruhetage:[],photo:null,ownImg:p.img||null,own:true,pid:p.id,quelle:srcOf(p),quelleUrl:p.url||null}));
   return [...base,...own].sort((a,b)=>a.zeit.localeCompare(b.zeit));
 }
+function srcOf(p){if(p.src)return p.src;const u=p.url||"";return /tiktok\./i.test(u)?"TikTok":/instagram\./i.test(u)?"Instagram":/youtu/i.test(u)?"YouTube":u?"Link":"Eigene Idee"}
+const SRC_ICON=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`;
+function srcLine(s){if(!s.quelle)return"";const url=s.quelleUrl||s.tiktok;
+  return `<div class="src">Quelle: ${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(s.quelle)} ansehen ${SRC_ICON}</a>`:`<span>${esc(s.quelle)}${s.quelle==="TikTok"?" (Link nicht gespeichert)":""}</span>`}</div>`}
 const closedOn=(s,i)=>s.ruhetage&&s.ruhetage.includes(WD[dateOf(i).getDay()]);
 function todayIndex(){const t=new Date();t.setHours(12,0,0,0);const d0=new Date(S.start+"T12:00:00");const n=Math.round((t-d0)/864e5);return n>=0&&n<14?n:-1}
 function bookState(id){return S.book[id]||{status:"offen",number:"",imgs:[]}}
@@ -246,8 +279,8 @@ let searchQ="",searchKind="Alle";
 const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 function allPlaces(){
   const out=[];
-  TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.typ==="Fahrt")return;out.push({name:s.name,info:s.info,typ:s.typ,stadt:D.stadt,day:i,zeit:s.zeit,maps:s.maps,photo:s.photo,ownImg:s.ownImg,tiktok:s.tiktok})}));
-  S.places.filter(p=>p.day==null).forEach(p=>out.push({name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,tiktok:p.url||null}));
+  TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.typ==="Fahrt")return;out.push({name:s.name,info:s.info,typ:s.typ,stadt:D.stadt,day:i,zeit:s.zeit,maps:s.maps,photo:s.photo,ownImg:s.ownImg,tiktok:s.tiktok,quelle:s.quelle,quelleUrl:s.quelleUrl})}));
+  S.places.filter(p=>p.day==null).forEach(p=>out.push({name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,quelle:srcOf(p),quelleUrl:p.url||null}));
   return out;
 }
 function hl(text,terms){let t=esc(text);terms.forEach(w=>{if(!w)return;const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");t=t.replace(re,"<mark>$1</mark>")});return t}
@@ -259,7 +292,7 @@ function runSearch(){
   const active=terms.length||searchKind!=="Alle";
   main.hidden=!!active;box.hidden=!active;
   if(!active){box.innerHTML="";return}
-  const hits=allPlaces().filter(p=>(searchKind==="Alle"||p.typ===searchKind)&&terms.every(w=>norm([p.name,p.info,p.stadt,p.typ].join(" ")).includes(w)));
+  const hits=allPlaces().filter(p=>(searchKind==="Alle"||p.typ===searchKind)&&terms.every(w=>norm([p.name,p.info,p.stadt,p.typ,p.quelle].join(" ")).includes(w)));
   let h=`<p class="count">${hits.length?hits.length+(hits.length===1?" Treffer":" Treffer"):"Nichts gefunden."}${hits.length?" · Name antippen öffnet Google Maps":""}</p><div class="list">`;
   hits.forEach(p=>{const raw=searchQ.trim().split(/\s+/);
     h+=`<div class="hit"><a class="thumblink" href="${p.maps}" target="_blank" rel="noopener" aria-label="${esc(p.name)} in Google Maps">${p.photo?`<img src="photos/${p.photo}.jpg" alt="" loading="lazy">`:p.ownImg?`<img data-img="${p.ownImg}" alt="">`:'<span class="ph"></span>'}</a>
@@ -267,7 +300,7 @@ function runSearch(){
       <a class="namelink" href="${p.maps}" target="_blank" rel="noopener"><b>${hl(p.name,raw)}</b>${PIN}</a>
       ${p.info?`<span class="muted small">${hl(p.info,raw)}</span>`:""}
       <div class="actions">${p.day!=null?`<button class="chip" data-day="${p.day}">Tag ${p.day+1} · ${WD[dateOf(p.day).getDay()]} ${fmt(dateOf(p.day))}${p.zeit?" · "+esc(p.zeit):""}</button>`:`<button class="chip" data-gowish>Merkliste</button>`}
-      ${p.tiktok?`<a class="chip" href="${esc(p.tiktok)}" target="_blank" rel="noopener">TikTok</a>`:""}</div></div></div>`});
+</div>${srcLine(p)}</div></div>`});
   box.innerHTML=h+"</div>";hydrate(box);
 }
 document.addEventListener("click",e=>{
@@ -282,16 +315,17 @@ function renderDay(){
   const i=curDay,D=TRIP[i],d=dateOf(i),st=stopsOf(i);
   let h=`<div class="hero">${D.photo?`<img src="photos/${D.photo}.jpg" alt="">`:""}<button class="back" data-back aria-label="Zurück">‹</button></div>
     <div class="eyebrow">Tag ${i+1} · ${fmtLong(d)}</div><h1>${esc(D.titel)}</h1>
-    <p class="muted small" style="margin:6px 0 16px"><span class="pill city">${esc(D.stadt)}</span> Übernachtung: ${esc(D.unterkunft)}</p><ol class="tl">`;
+    <p class="muted small" style="margin:6px 0 14px"><span class="pill city">${esc(D.stadt)}</span> Übernachtung: ${esc(D.unterkunft)}</p>
+    <button class="btn primary playbtn" data-story="${i}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Tag als Story ansehen</button><ol class="tl">`;
   st.forEach(s=>{const done=!!S.done[s.id],b=s.reservierung?bookState(s.id):null;
     h+=`<li><div class="time">${esc(s.zeit)}</div><div class="stop ${done?"done":""}">
       ${s.photo&&s.photo!==D.photo?`<a class="thumblink" href="${s.maps}" target="_blank" rel="noopener" aria-label="${esc(s.name)} in Google Maps"><img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy"></a>`:s.ownImg?`<figure style="margin:0"><a class="thumblink" href="${s.maps}" target="_blank" rel="noopener"><img class="thumb" data-img="${s.ownImg}" alt=""></a></figure>`:""}
-      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}${s.quelle?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
+      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}${s.quelle&&s.quelle!=="Reiseführer"&&!s.own?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
       <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
       ${s.info?`<div class="muted small">${esc(s.info)}</div>`:""}
+      ${srcLine(s)}
       ${closedOn(s,i)?`<div class="flag">An einem ${WD[d.getDay()]} meist geschlossen. Tag tauschen oder Öffnungszeiten prüfen.</div>`:""}
       <div class="actions"><a class="chip" href="${s.maps}" target="_blank" rel="noopener">Karte</a>
-      ${s.tiktok?`<a class="chip" href="${esc(s.tiktok)}" target="_blank" rel="noopener">TikTok</a>`:""}
       ${b?`<button class="chip s-${b.status}" data-gobook="${s.id}">Buchung: ${b.status}</button>`:""}
       ${s.own?`<button class="chip" data-unplan="${s.pid}">Aus dem Tag nehmen</button>`:""}</div></div></div></li>`});
   h+=`</ol><h2>Tagebuch</h2><div class="card"><label class="field"><span>Notizen</span><textarea id="dayNote" placeholder="Was war heute besonders? Adressen, Bestätigungen …">${esc(S.notes[i]||"")}</textarea></label>
@@ -359,7 +393,8 @@ function renderWish(){
   let h=`<div class="topbar"><div><div class="eyebrow">Aus TikTok & Co.</div><h1>Merkliste</h1></div></div>
   <form class="card" id="wishForm" autocomplete="off">
     <p class="muted small" style="margin:0">In TikTok auf <b>Teilen → Link kopieren</b>, hier einfügen. Bildunterschrift oder Screenshot helfen beim Erkennen.</p>
-    <label class="field"><span>TikTok-Link</span><input id="wLink" type="url" inputmode="url" placeholder="https://www.tiktok.com/…"></label>
+    <label class="field"><span>Link zum Video (TikTok, Instagram …)</span><input id="wLink" type="url" inputmode="url" placeholder="https://www.tiktok.com/…"></label>
+    <label class="field"><span>Quelle</span><select id="wSrc"><option value="">automatisch aus dem Link</option><option>TikTok</option><option>Instagram</option><option>YouTube</option><option>Google Maps</option><option>Reiseführer</option><option>Empfehlung</option><option>Eigene Idee</option></select></label>
     <div class="btnrow"><button type="button" class="btn" id="pasteBtn">Aus Zwischenablage einfügen</button></div>
     <label class="field"><span>Bildunterschrift (optional)</span><textarea id="wText" placeholder="Text aus dem Video kopieren"></textarea></label>
     <details style="background:var(--bg)"><summary>Mit Claude erkennen (kostenlos)</summary>
@@ -378,7 +413,8 @@ function renderWish(){
     <button class="btn primary" type="submit">Speichern</button><div class="status" id="wStatus"></div>
   </form>`;
   const card=p=>`<div class="item"><div class="head"><div><b>${esc(p.name)}</b><span class="muted small">${esc([p.kind,p.city,p.info].filter(Boolean).join(" · "))}</span></div>${p.img?`<figure style="margin:0;width:56px;flex:0 0 auto"><img data-img="${p.img}" data-view alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px"></figure>`:""}</div>
-    <div class="actions"><a class="chip" href="${mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a>${p.url?`<a class="chip" href="${esc(p.url)}" target="_blank" rel="noopener">TikTok</a>`:""}<button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
+    <div class="actions"><a class="chip" href="${mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a><button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
+    ${srcLine({quelle:srcOf(p),quelleUrl:p.url})}
     <label class="field"><span>Tag</span><select data-plday="${p.id}">${dayOpts(p.day)}</select></label></div>`;
   h+=`<h2>Ohne Tag (${ideas.length})</h2><div class="list">${ideas.length?ideas.map(card).join(""):'<p class="muted">Noch nichts gemerkt.</p>'}</div>`;
   if(planned.length)h+=`<h2>Schon eingeplant (${planned.length})</h2><div class="list">${planned.map(card).join("")}</div>`;
@@ -392,7 +428,7 @@ function renderWish(){
   $("#wishForm").onsubmit=async e=>{e.preventDefault();const v=id=>$(id).value.trim();
     if(!v("#wName")){$("#wStatus").textContent="Bitte einen Namen eintragen.";$("#wStatus").className="status err";return}
     const day=v("#wDay")===""?null:+v("#wDay");
-    const p={id:Date.now().toString(36),name:v("#wName"),city:v("#wCity"),info:v("#wInfo"),kind:v("#wKind"),res:v("#wRes"),day,time:v("#wTime")||"12:00",q:v("#wQ"),url:/^https?:\/\//.test(v("#wLink"))?v("#wLink"):""};
+    const p={id:Date.now().toString(36),src:v("#wSrc"),name:v("#wName"),city:v("#wCity"),info:v("#wInfo"),kind:v("#wKind"),res:v("#wRes"),day,time:v("#wTime")||"12:00",q:v("#wQ"),url:/^https?:\/\//.test(v("#wLink"))?v("#wLink"):""};
     if(draftImg)p.img=await imgPut(draftImg);draftImg=null;
     S.places.push(p);save();renderWish();toast(day==null?"Auf der Merkliste":`In Tag ${day+1} eingeplant`)};
 }
@@ -444,6 +480,69 @@ async function exportBackup(){
 async function importBackup(f){try{const d=JSON.parse(await f.text());if(d.app!=="japan-mai")throw 0;
   const db=await IDB;for(const k in d.images||{}){const blob=await (await fetch(d.images[k])).blob();await new Promise(r=>{const t=db.transaction("img","readwrite");t.objectStore("img").put(blob,k);t.oncomplete=r})}
   S={...S,...d.state};save();toast("Sicherung geladen");goTab("trip")}catch(e){$("#bkStatus").textContent="Diese Datei ist keine Japan-Mai-Sicherung.";$("#bkStatus").className="status err"}}
+
+/* ---------- Tages-Story ---------- */
+let ST=null;
+function storySlides(i){
+  const D=TRIP[i],d=dateOf(i),st=stopsOf(i),head=`Tag ${i+1} · ${WD[d.getDay()]} ${fmt(d)}`;
+  const dayBg=D.photo?`photos/${D.photo}.jpg`:null;
+  const slides=[{bg:dayBg,dur:5000,head,html:`<div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(D.stadt)} · ${st.length} Stationen</div><h2>${esc(D.titel)}</h2><p>${fmtLong(d)}</p>`}];
+  st.forEach(s=>{const own=!s.photo&&s.ownImg;
+    slides.push({bg:s.photo?`photos/${s.photo}.jpg`:dayBg,img:own?s.ownImg:null,soft:!s.photo&&!own,dur:s.typ==="Fahrt"?4000:5500,head,
+      html:`<div><span class="stime">${esc(s.zeit)}</span><span class="sk">${esc(s.typ)}</span></div><h2>${esc(s.name)}</h2>${s.info?`<p>${esc(s.info)}</p>`:""}
+        <div class="meta">${[s.quelle?"Quelle: "+esc(s.quelle):"",s.reservierung?"Reservierung "+esc(bookState(s.id).status):"",closedOn(s,i)?"Ruhetag prüfen":""].filter(Boolean).join(" · ")}</div>`})});
+  slides.push({bg:dayBg,soft:true,dur:8000,head,html:`<div class="eyebrow" style="color:rgba(255,255,255,.75)">Der Tag im Überblick</div><h2>${esc(D.titel)}</h2>
+    <ol>${st.map(s=>`<li><b>${esc(s.zeit)}</b>${esc(s.name)}</li>`).join("")}</ol><div class="meta">Übernachtung: ${esc(D.unterkunft)}</div>`});
+  return slides;
+}
+function openStory(i){
+  closeStory();
+  const el=document.createElement("div");el.className="story";el.setAttribute("role","dialog");el.setAttribute("aria-label","Tagesvorschau");
+  const slides=storySlides(i);
+  el.innerHTML=`<div class="bg"></div><div class="shade"></div><div class="bars">${slides.map(()=>"<span><i></i></span>").join("")}</div>
+    <div class="head"><span class="hd"></span><button class="close" aria-label="Schließen">×</button></div>
+    <div class="tap"><button aria-label="Zurück"></button><button aria-label="Weiter"></button></div><div class="txt"></div><div class="paused" hidden>Pause</div>`;
+  document.body.appendChild(el);document.body.style.overflow="hidden";
+  ST={el,slides,k:-1,t0:0,elapsed:0,paused:false,raf:0,day:i};
+  const [prev,next]=el.querySelectorAll(".tap button");
+  let holdT=0,held=false;
+  const down=()=>{held=false;holdT=setTimeout(()=>{held=true;pauseStory(true)},250)};
+  const up=fn=>()=>{clearTimeout(holdT);if(held){pauseStory(false)}else fn()};
+  prev.addEventListener("pointerdown",down);next.addEventListener("pointerdown",down);
+  prev.addEventListener("pointerup",up(()=>goSlide(ST.k-1)));next.addEventListener("pointerup",up(()=>goSlide(ST.k+1)));
+  [prev,next].forEach(b=>b.addEventListener("pointerleave",()=>{clearTimeout(holdT);if(held){held=false;pauseStory(false)}}));
+  el.querySelector(".close").addEventListener("click",closeStory);
+  goSlide(0);ST.raf=requestAnimationFrame(tick);
+}
+async function goSlide(k){
+  if(!ST)return;const {el,slides}=ST;
+  if(k<0)k=0;
+  if(k>=slides.length){closeStory();return}
+  ST.k=k;ST.elapsed=0;ST.t0=performance.now();
+  const sl=slides[k];
+  el.querySelectorAll(".bars i").forEach((b,j)=>b.style.width=j<k?"100%":"0");
+  el.querySelector(".hd").textContent=sl.head;
+  const old=el.querySelector(".bg"),bg=document.createElement("div");
+  bg.className="bg"+(sl.soft?" soft":" kb");bg.style.setProperty("--dur",sl.dur+"ms");
+  let src=sl.bg;if(sl.img){const u=await imgUrl(sl.img);if(u)src=u;if(!ST||ST.k!==k)return}
+  if(src)bg.style.backgroundImage=`url("${src}")`;old.replaceWith(bg);
+  if(ST.paused)bg.style.animationPlayState="paused";
+  const t=el.querySelector(".txt"),nt=t.cloneNode(false);nt.innerHTML=sl.html;t.replaceWith(nt);
+}
+function tick(now){
+  if(!ST)return;
+  if(!ST.paused){const sl=ST.slides[ST.k];const e=ST.elapsed+(now-ST.t0);
+    const bar=ST.el.querySelectorAll(".bars i")[ST.k];if(bar)bar.style.width=Math.min(100,e/sl.dur*100)+"%";
+    if(e>=sl.dur){goSlide(ST.k+1)}}
+  if(ST)ST.raf=requestAnimationFrame(tick);
+}
+function pauseStory(p){if(!ST||ST.paused===p)return;const now=performance.now();
+  if(p){ST.elapsed+=now-ST.t0}else{ST.t0=now}
+  ST.paused=p;ST.el.querySelector(".paused").hidden=!p;const bg=ST.el.querySelector(".bg");if(bg)bg.style.animationPlayState=p?"paused":"running"}
+function closeStory(){if(!ST)return;cancelAnimationFrame(ST.raf);ST.el.remove();ST=null;document.body.style.overflow=""}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-story]");if(b)openStory(+b.dataset.story)});
+document.addEventListener("keydown",e=>{if(!ST)return;if(e.key==="Escape")closeStory();if(e.key==="ArrowRight")goSlide(ST.k+1);if(e.key==="ArrowLeft")goSlide(ST.k-1);if(e.key===" "){e.preventDefault();pauseStory(!ST.paused)}});
+document.addEventListener("visibilitychange",()=>{if(ST)pauseStory(document.hidden)});
 
 /* ---------- Start ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2000)}
