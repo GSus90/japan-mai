@@ -286,7 +286,7 @@ function renderDay(){
   st.forEach(s=>{const done=!!S.done[s.id],b=s.reservierung?bookState(s.id):null;
     h+=`<li><div class="time">${esc(s.zeit)}</div><div class="stop ${done?"done":""}">
       ${s.photo&&s.photo!==D.photo?`<a class="thumblink" href="${s.maps}" target="_blank" rel="noopener" aria-label="${esc(s.name)} in Google Maps"><img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy"></a>`:s.ownImg?`<figure style="margin:0"><a class="thumblink" href="${s.maps}" target="_blank" rel="noopener"><img class="thumb" data-img="${s.ownImg}" alt=""></a></figure>`:""}
-      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
+      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}${s.quelle?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
       <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
       ${s.info?`<div class="muted small">${esc(s.info)}</div>`:""}
       ${closedOn(s,i)?`<div class="flag">An einem ${WD[d.getDay()]} meist geschlossen. Tag tauschen oder Öffnungszeiten prüfen.</div>`:""}
