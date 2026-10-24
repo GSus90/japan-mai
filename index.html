@@ -68,6 +68,19 @@ a.namelink{text-decoration:none;color:inherit;display:inline}
 a.namelink .pin{display:inline-block;width:14px;height:14px;margin-left:5px;vertical-align:-1px;color:var(--stamp)}
 a.thumblink{display:block}
 .src{font-size:.78rem;color:var(--muted)}
+.addtitle{font-family:var(--serif);font-size:1.2rem}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0}
+.filebtn.pulse{border-color:var(--stamp);color:var(--stamp);box-shadow:0 0 0 3px var(--stamp-soft)}
+.linkbtn{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:.88rem;align-self:flex-start;padding:0}
+.rec{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.recimg{width:100%;max-height:150px;object-fit:cover;object-position:center 65%;border-radius:10px}
+.recname{font-family:var(--serif);font-size:1.45rem;font-weight:700;line-height:1.15}
+.sug{display:flex;flex-direction:column;gap:2px;background:var(--surface2);border-radius:10px;padding:10px 12px}
+.sug b{font-size:1.02rem}
+.editgrid{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.raw pre{white-space:pre-wrap;font-size:.75rem;color:var(--muted);max-height:180px;overflow:auto;margin:6px 0 0}
+details.raw{padding:8px 10px;background:var(--bg)}
 /* Tages-Story */
 .playbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0 0 18px}
 .playbtn svg{width:18px;height:18px}
@@ -194,6 +207,7 @@ details ul{padding-left:18px;margin:8px 0 2px}
 <div class="viewer" id="viewer" hidden><img alt=""></div>
 
 <script src="data.js"></script>
+<script src="recognize.js"></script>
 <script>
 const TRIP=window.TRIP, CREDITS=window.CREDITS||[];
 const WD=["So","Mo","Di","Mi","Do","Fr","Sa"];
@@ -232,7 +246,7 @@ const fmtLong=d=>d.toLocaleDateString("de-AT",{weekday:"long",day:"numeric",mont
 function stopsOf(i){
   const base=TRIP[i].stops.map(s=>({...s,own:false}));
   const own=S.places.filter(p=>p.day===i).map(p=>({id:"p-"+p.id,zeit:p.time||"12:00",typ:p.kind||"Essen",name:p.name,info:p.info,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),tiktok:p.url||null,
-    reservierung:p.res?{art:p.res}:null,ruhetage:[],photo:null,ownImg:p.img||null,own:true,pid:p.id,quelle:srcOf(p),quelleUrl:p.url||null}));
+    reservierung:p.res?{art:p.res}:null,ruhetage:p.closed||[],photo:null,ownImg:p.img||null,own:true,pid:p.id,quelle:srcOf(p),quelleUrl:p.url||null}));
   return [...base,...own].sort((a,b)=>a.zeit.localeCompare(b.zeit));
 }
 function srcOf(p){if(p.src)return p.src;const u=p.url||"";return /tiktok\./i.test(u)?"TikTok":/instagram\./i.test(u)?"Instagram":/youtu/i.test(u)?"YouTube":u?"Link":"Eigene Idee"}
@@ -320,7 +334,7 @@ function renderDay(){
   st.forEach(s=>{const done=!!S.done[s.id],b=s.reservierung?bookState(s.id):null;
     h+=`<li><div class="time">${esc(s.zeit)}</div><div class="stop ${done?"done":""}">
       ${s.photo&&s.photo!==D.photo?`<a class="thumblink" href="${s.maps}" target="_blank" rel="noopener" aria-label="${esc(s.name)} in Google Maps"><img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy"></a>`:s.ownImg?`<figure style="margin:0"><a class="thumblink" href="${s.maps}" target="_blank" rel="noopener"><img class="thumb" data-img="${s.ownImg}" alt=""></a></figure>`:""}
-      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.own?'<span class="own">Merkliste</span>':""}${s.quelle&&s.quelle!=="Reiseführer"&&!s.own?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
+      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.quelle&&s.quelle!=="Reiseführer"?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
       <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
       ${s.info?`<div class="muted small">${esc(s.info)}</div>`:""}
       ${srcLine(s)}
@@ -375,43 +389,23 @@ document.addEventListener("input",e=>{const n=e.target.dataset.bnum;if(n!==undef
 document.addEventListener("change",async e=>{const bi=e.target.dataset.bimg;if(bi!==undefined&&e.target.files[0]){const id=await imgPut(await shrink(e.target.files[0]));const b=bookState(bi);setBook(bi,{imgs:[...(b.imgs||[]),id]});renderBook();toast("Beleg gespeichert")}});
 
 /* ---------- Merkliste & TikTok ---------- */
-let draftImg=null;
+let draft=null;
 function dayOpts(sel){return `<option value="">Noch kein Tag</option>`+TRIP.map((D,i)=>`<option value="${i}" ${sel===i?"selected":""}>Tag ${i+1} · ${WD[dateOf(i).getDay()]} ${fmt(dateOf(i))} · ${esc(D.stadt)}</option>`).join("")}
-function claudePrompt(link,text){
-  return `Ich plane eine Japanreise und habe ein TikTok-Video gefunden. Finde heraus, welches Restaurant oder welche Sehenswürdigkeit gemeint ist. Schau dir dazu den Link und die Bildunterschrift an und such im Web, falls nötig.
-
-TikTok-Link: ${link||"(keiner)"}
-Bildunterschrift: ${text||"(keine)"}
-
-Meine Route: ${TRIP.map((D,i)=>`Tag ${i+1} ${D.stadt}`).join(", ")}.
-
-Antworte am Ende mit genau einer Zeile JSON, sonst nichts in dieser Zeile:
-{"name":"…","stadt":"…","typ":"Essen|Sehen|Abend","info":"ein kurzer deutscher Satz","maps":"Suchbegriff für Google Maps","reservierung":"|empfohlen|nötig","tag":1-14 oder null,"zeit":"HH:MM"}`;
-}
+const CITIES=["Tokyo","Kyoto","Osaka","Nara","Kobe","Okayama","Naoshima","Hiroshima"];
 function renderWish(){
   const ideas=S.places.filter(p=>p.day==null),planned=S.places.filter(p=>p.day!=null);
   let h=`<div class="topbar"><div><div class="eyebrow">Aus TikTok & Co.</div><h1>Merkliste</h1></div></div>
-  <form class="card" id="wishForm" autocomplete="off">
-    <p class="muted small" style="margin:0">In TikTok auf <b>Teilen → Link kopieren</b>, hier einfügen. Bildunterschrift oder Screenshot helfen beim Erkennen.</p>
-    <label class="field"><span>Link zum Video (TikTok, Instagram …)</span><input id="wLink" type="url" inputmode="url" placeholder="https://www.tiktok.com/…"></label>
-    <label class="field"><span>Quelle</span><select id="wSrc"><option value="">automatisch aus dem Link</option><option>TikTok</option><option>Instagram</option><option>YouTube</option><option>Google Maps</option><option>Reiseführer</option><option>Empfehlung</option><option>Eigene Idee</option></select></label>
-    <div class="btnrow"><button type="button" class="btn" id="pasteBtn">Aus Zwischenablage einfügen</button></div>
-    <label class="field"><span>Bildunterschrift (optional)</span><textarea id="wText" placeholder="Text aus dem Video kopieren"></textarea></label>
-    <details style="background:var(--bg)"><summary>Mit Claude erkennen (kostenlos)</summary>
-      <p>Öffnet Claude mit einer fertigen Frage. Claude antwortet mit einer Zeile JSON: diese kopieren und unten einfügen. Die Felder füllen sich dann von selbst.</p>
-      <div class="btnrow"><button type="button" class="btn primary" id="askClaude">Frage kopieren & Claude öffnen</button></div>
-      <label class="field" style="margin-top:10px"><span>Antwort von Claude</span><textarea id="wAnswer" placeholder='{"name":"…"}'></textarea></label>
-      <div class="status" id="ansStatus"></div>
-    </details>
-    <div class="grid2"><label class="field"><span>Name</span><input id="wName" placeholder="Restaurant oder Ort"></label><label class="field"><span>Stadt</span><input id="wCity" placeholder="z. B. Osaka"></label></div>
-    <label class="field"><span>Notiz</span><textarea id="wInfo" placeholder="Was wird empfohlen?"></textarea></label>
-    <div class="grid2"><label class="field"><span>Art</span><select id="wKind"><option>Essen</option><option>Sehen</option><option>Abend</option></select></label>
-      <label class="field"><span>Reservierung</span><select id="wRes"><option value="">keine nötig</option><option>empfohlen</option><option>nötig</option></select></label></div>
-    <div class="grid2"><label class="field"><span>Tag</span><select id="wDay">${dayOpts(null)}</select></label><label class="field"><span>Uhrzeit</span><input id="wTime" type="time" value="19:00"></label></div>
-    <label class="field"><span>Suchbegriff Google Maps</span><input id="wQ" placeholder="Name + Stadt"></label>
-    <div class="shots"><label class="addshot" id="wImgBox">+ Screenshot<input type="file" accept="image/*" id="wImg"></label></div>
-    <button class="btn primary" type="submit">Speichern</button><div class="status" id="wStatus"></div>
-  </form>`;
+  <div class="card" id="addCard">
+    <div><h3 class="addtitle">Ort aus TikTok hinzufügen</h3>
+    <p class="muted small" style="margin:4px 0 0">In TikTok auf <b>Teilen → Link kopieren</b>, dann hier tippen. Die App erkennt das Lokal und schlägt einen Tag vor.</p></div>
+    <label class="field"><span>Link</span><input id="tkLink" type="url" inputmode="url" placeholder="https://vm.tiktok.com/…" value="${esc(draft?.link||"")}"></label>
+    <button class="btn primary" id="tkGo">Link einfügen & erkennen</button>
+    <label class="btn filebtn" id="tkShotBtn">Oder Screenshot vom Video wählen<input type="file" accept="image/*" id="tkShot"></label>
+    <p class="muted small" style="margin:0">Beim Screenshot vorher in TikTok auf „mehr“ tippen, damit die ganze Beschreibung zu sehen ist.</p>
+    <div class="status" id="tkStatus" aria-live="polite"></div>
+    <div id="tkResult"></div>
+    ${draft?"":`<button class="linkbtn" id="tkManual">Ohne Video selbst eintragen</button>`}
+  </div>`;
   const card=p=>`<div class="item"><div class="head"><div><b>${esc(p.name)}</b><span class="muted small">${esc([p.kind,p.city,p.info].filter(Boolean).join(" · "))}</span></div>${p.img?`<figure style="margin:0;width:56px;flex:0 0 auto"><img data-img="${p.img}" data-view alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px"></figure>`:""}</div>
     <div class="actions"><a class="chip" href="${mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a><button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
     ${srcLine({quelle:srcOf(p),quelleUrl:p.url})}
@@ -419,29 +413,109 @@ function renderWish(){
   h+=`<h2>Ohne Tag (${ideas.length})</h2><div class="list">${ideas.length?ideas.map(card).join(""):'<p class="muted">Noch nichts gemerkt.</p>'}</div>`;
   if(planned.length)h+=`<h2>Schon eingeplant (${planned.length})</h2><div class="list">${planned.map(card).join("")}</div>`;
   const v=$("#v-wish");v.innerHTML=h;hydrate(v);
-  $("#pasteBtn").onclick=async()=>{try{const t=await navigator.clipboard.readText();if(/^https?:\/\//.test(t.trim()))$("#wLink").value=t.trim();else $("#wText").value=t}catch(e){toast("Lange ins Feld tippen und Einsetzen wählen")}};
-  $("#askClaude").onclick=async()=>{const p=claudePrompt($("#wLink").value.trim(),$("#wText").value.trim());
-    try{await navigator.clipboard.writeText(p);toast("Frage kopiert")}catch(e){}
-    window.open("https://claude.ai/new?q="+encodeURIComponent(p),"_blank")};
-  $("#wAnswer").oninput=e=>fillFromAnswer(e.target.value);
-  $("#wImg").onchange=async e=>{const f=e.target.files[0];if(!f)return;draftImg=await shrink(f,1200);$("#wImgBox").style.backgroundImage=`url(${URL.createObjectURL(draftImg)})`;$("#wImgBox").style.backgroundSize="cover";$("#wImgBox").firstChild.textContent=""};
-  $("#wishForm").onsubmit=async e=>{e.preventDefault();const v=id=>$(id).value.trim();
-    if(!v("#wName")){$("#wStatus").textContent="Bitte einen Namen eintragen.";$("#wStatus").className="status err";return}
-    const day=v("#wDay")===""?null:+v("#wDay");
-    const p={id:Date.now().toString(36),src:v("#wSrc"),name:v("#wName"),city:v("#wCity"),info:v("#wInfo"),kind:v("#wKind"),res:v("#wRes"),day,time:v("#wTime")||"12:00",q:v("#wQ"),url:/^https?:\/\//.test(v("#wLink"))?v("#wLink"):""};
-    if(draftImg)p.img=await imgPut(draftImg);draftImg=null;
-    S.places.push(p);save();renderWish();toast(day==null?"Auf der Merkliste":`In Tag ${day+1} eingeplant`)};
+  renderDraft();
+  $("#tkGo").onclick=fromLink;
+  $("#tkShot").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)fromShot(f)};
+  $("#tkManual")?.addEventListener("click",()=>{draft={link:"",img:null,rec:{name:"",city:"",area:"",kind:"Essen",info:"",res:"",closed:[],sure:true},sug:{day:null,time:"19:00",why:""},manual:true};renderWish();$("#dName")?.focus()});
 }
-function fillFromAnswer(txt){
-  const st=$("#ansStatus");const m=txt.match(/\{[\s\S]*\}/);if(!m){st.textContent="";return}
-  try{const r=JSON.parse(m[0]);const set=(id,val)=>{if(val!=null&&val!=="")$(id).value=val};
-    set("#wName",r.name);set("#wCity",r.stadt);set("#wInfo",r.info);set("#wQ",r.maps);
-    if(["Essen","Sehen","Abend"].includes(r.typ))$("#wKind").value=r.typ;
-    $("#wRes").value=["empfohlen","nötig"].includes(r.reservierung)?r.reservierung:"";
-    if(/^\d{1,2}:\d{2}$/.test(r.zeit||""))$("#wTime").value=r.zeit.padStart(5,"0");
-    const t=+r.tag;$("#wDay").value=t>=1&&t<=14?String(t-1):"";
-    st.textContent="Übernommen. Kurz prüfen, dann speichern.";st.className="status"}
-  catch(e){st.textContent="Das ist kein gültiges JSON. Nur die eine Zeile mit { … } einfügen.";st.className="status err"}
+function tkStatus(msg,err){const el=$("#tkStatus");if(el){el.textContent=msg||"";el.className="status"+(err?" err":"")}}
+async function fromLink(){
+  let link=$("#tkLink").value.trim();
+  if(!/^https?:\/\//.test(link)){try{const t=(await navigator.clipboard.readText()).trim();const m=t.match(/https?:\/\/\S+/);if(m)link=m[0]}catch(e){}}
+  if(!/^https?:\/\//.test(link)){tkStatus("Kein Link gefunden. Lange ins Feld „Link“ tippen und „Einsetzen“ wählen.",true);$("#tkLink").focus();return}
+  $("#tkLink").value=link;
+  tkStatus("Hole die Beschreibung von TikTok …");
+  let text="";
+  try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),9000);
+    const r=await fetch("https://www.tiktok.com/oembed?url="+encodeURIComponent(link),{signal:ctl.signal});clearTimeout(to);
+    if(r.ok){const j=await r.json();text=[j.title,j.author_name?"@"+j.author_name:""].filter(Boolean).join("\n")}}catch(e){}
+  if(!text||!Rec.fromText(text).name){
+    draft={...(draft||{}),link};
+    tkStatus("TikTok gibt die Beschreibung hier nicht heraus. Wähle einen Screenshot vom Video, dann liest die App den Text daraus. Der Link bleibt gespeichert.",true);
+    $("#tkShotBtn").classList.add("pulse");return}
+  process(text,link,draft?.img||null);
+}
+let tessP=null;
+function loadTess(){return tessP||(tessP=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";sc.onload=()=>res(window.Tesseract);sc.onerror=()=>{tessP=null;rej(new Error("load"))};document.head.appendChild(sc)}))}
+function prepCanvas(im,lightText,crop){
+  const W=im.naturalWidth,H=im.naturalHeight;const x0=0,y0=crop?Math.round(H*.33):0,w=crop?Math.round(W*.88):W,h=crop?Math.round(H*.6):H;
+  const sc=Math.min(1,1400/w);const c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);
+  const g=c.getContext("2d");g.drawImage(im,x0,y0,w,h,0,0,c.width,c.height);
+  const d=g.getImageData(0,0,c.width,c.height),a=d.data;
+  for(let i=0;i<a.length;i+=4){const y=.299*a[i]+.587*a[i+1]+.114*a[i+2];const v=lightText?(y>150?0:255):(y<110?0:255);a[i]=a[i+1]=a[i+2]=v}
+  g.putImageData(d,0,0);return c}
+async function fromShot(file){
+  tkStatus("Lese den Text aus dem Screenshot … (beim ersten Mal 10–20 Sekunden)");
+  const img=await shrink(file,1400);
+  let T;try{T=await loadTess()}catch(e){tkStatus("Die Texterkennung braucht beim ersten Mal Internet. Bitte mit Netz noch einmal versuchen.",true);return}
+  const url=URL.createObjectURL(file);const im=new Image();
+  try{await new Promise((r,j)=>{im.onload=r;im.onerror=j;im.src=url})}catch(e){tkStatus("Das Bild konnte nicht geöffnet werden.",true);return}
+  let text="";
+  try{
+    for(const [light,crop] of [[true,true],[false,false],[true,false]]){
+      const out=await T.recognize(prepCanvas(im,light,crop),"eng");text=out.data.text||"";
+      if(Rec.fromText(text).name&&Rec.fromText(text).city)break;
+    }
+  }catch(e){tkStatus("Die Texterkennung hat nicht geklappt. Trag den Namen unten selbst ein.",true)}
+  URL.revokeObjectURL(url);
+  $("#tkShotBtn")?.classList.remove("pulse");
+  process(text,($("#tkLink")?.value||"").trim()||draft?.link||"",img);
+}
+function dayLabel(i){return `Tag ${i+1} (${WD[dateOf(i).getDay()]} ${fmt(dateOf(i))})`}
+function process(text,link,img){
+  const rec=Rec.fromText(text);
+  const sug=Rec.suggest(rec,stopsOf,dayLabel,i=>WD[dateOf(i).getDay()]);
+  draft={link,img,rec,sug,text};
+  const dupe=findDupe(rec.name);
+  renderWish();
+  setTimeout(()=>$("#tkResult")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
+  tkStatus(dupe?`„${rec.name}“ ist schon ${dupe}.`:rec.name?"":"Kein Name gefunden. Bitte unten eintragen.",!!dupe||!rec.name);
+}
+function findDupe(name){const n=norm(name);if(n.length<3)return"";
+  for(let i=0;i<14;i++)for(const s of stopsOf(i))if(norm(s.name).includes(n)||n.includes(norm(s.name))&&norm(s.name).length>4)return `an Tag ${i+1} im Plan`;
+  return S.places.some(p=>p.day==null&&norm(p.name)===n)?"auf der Merkliste":""}
+async function renderDraft(){
+  const box=$("#tkResult");if(!box)return;
+  if(!draft||!draft.rec){box.innerHTML="";return}
+  const r=draft.rec,g=draft.sug,dayTxt=g.day!=null?`${dayLabel(g.day)} · ${g.time}`:"Noch kein Tag";
+  box.innerHTML=`<div class="rec">
+    ${draft.img?`<img class="recimg" alt="" id="recImg">`:""}
+    ${draft.manual?"":`<div class="eyebrow">${r.name&&r.sure?"Erkannt":"Bitte prüfen"}</div>`}
+    ${r.name?`<div class="recname">${esc(r.name)}</div><div class="muted small">${esc([r.kind,r.city,r.area&&r.area.toLowerCase()!==String(r.city).toLowerCase()?r.area:""].filter(Boolean).join(" · "))}</div>`:""}
+    ${r.name?`<div class="sug"><span class="eyebrow">Vorschlag</span><b>${esc(dayTxt)}</b><span class="muted small">${esc(g.why||"")}</span></div>`:""}
+    ${r.info?`<div class="muted small">${esc(r.info)}</div>`:""}
+    <div class="btnrow">${r.name?`<button class="btn primary" id="recAdd">${g.day!=null?"In Tag "+(g.day+1)+" einplanen":"Auf die Merkliste"}</button>`:""}${r.name&&g.day!=null?`<button class="btn" id="recKeep">Nur merken</button>`:""}<button class="btn" id="recCancel">Verwerfen</button></div>
+    ${r.name?`<a class="chip" style="align-self:flex-start" href="${mapUrl([r.name,r.area,r.city].filter(Boolean).join(" "))}" target="_blank" rel="noopener">In Google Maps prüfen</a>`:""}
+    <details id="recEdit" ${!r.name||draft.manual?"open":""}><summary>Ändern</summary>
+      <div class="editgrid">
+      <label class="field"><span>Name</span><input id="dName" value="${esc(r.name)}" placeholder="Restaurant oder Ort"></label>
+      <div class="grid2"><label class="field"><span>Stadt</span><select id="dCity"><option value="">unbekannt</option>${CITIES.map(c=>`<option ${c===r.city?"selected":""}>${c}</option>`).join("")}</select></label>
+      <label class="field"><span>Art</span><select id="dKind">${["Essen","Sehen","Abend"].map(k=>`<option ${k===r.kind?"selected":""}>${k}</option>`).join("")}</select></label></div>
+      <div class="grid2"><label class="field"><span>Tag</span><select id="dDay">${dayOpts(g.day)}</select></label><label class="field"><span>Uhrzeit</span><input id="dTime" type="time" value="${esc(g.time||"19:00")}"></label></div>
+      <label class="field"><span>Reservierung</span><select id="dRes"><option value="">keine nötig</option>${["empfohlen","nötig"].map(k=>`<option ${k===r.res?"selected":""}>${k}</option>`).join("")}</select></label>
+      <label class="field"><span>Notiz</span><textarea id="dInfo">${esc(r.info||"")}</textarea></label>
+      ${draft.text?`<details class="raw"><summary>Erkannter Text</summary><pre>${esc(draft.text.slice(0,1500))}</pre></details>`:""}
+      <button class="btn primary" id="dSave">Speichern</button>
+      </div></details>
+  </div>`;
+  if(draft.img){const u=URL.createObjectURL(draft.img);$("#recImg").src=u}
+  const reSuggest=()=>{r.name=$("#dName").value.trim();r.city=$("#dCity").value;r.kind=$("#dKind").value;draft.sug=Rec.suggest(r,stopsOf,dayLabel,i=>WD[dateOf(i).getDay()]);$("#dDay").value=draft.sug.day==null?"":String(draft.sug.day);if(draft.sug.time)$("#dTime").value=draft.sug.time};
+  $("#dCity").onchange=reSuggest;$("#dKind").onchange=reSuggest;
+  $("#recAdd")?.addEventListener("click",()=>savePlace(g.day,g.time));
+  $("#recKeep")?.addEventListener("click",()=>savePlace(null,g.time));
+  $("#recCancel").onclick=()=>{draft=null;tkStatus("");renderWish()};
+  $("#dSave").onclick=()=>{r.name=$("#dName").value.trim();r.city=$("#dCity").value;r.kind=$("#dKind").value;r.res=$("#dRes").value;r.info=$("#dInfo").value.trim();
+    if(!r.name){tkStatus("Bitte einen Namen eintragen.",true);$("#dName").focus();return}
+    savePlace($("#dDay").value===""?null:+$("#dDay").value,$("#dTime").value||"12:00")};
+}
+async function savePlace(day,time){
+  const r=draft.rec;if(!r.name)return;
+  const p={id:Date.now().toString(36),src:draft.link?"":(draft.manual?"Eigene Idee":"TikTok"),url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
+    q:[r.name,r.area,r.city].filter(Boolean).join(" "),closed:r.closed||[]};
+  if(draft.img)p.img=await imgPut(draft.img);
+  S.places.push(p);save();draft=null;renderWish();
+  tkStatus(day==null?`„${p.name}“ ist auf der Merkliste.`:`„${p.name}“ ist an Tag ${day+1} um ${p.time} eingeplant.`);
+  toast(day==null?"Gemerkt":`In Tag ${day+1} eingeplant`);
 }
 let armed=null;
 document.addEventListener("click",e=>{const d=e.target.closest("[data-delplace]");if(!d)return;const id=d.dataset.delplace;
