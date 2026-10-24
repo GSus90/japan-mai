@@ -5,7 +5,7 @@
   const AREAS = {
     Tokyo: ['tokyo','shibuya','shinjuku','kabukicho','harajuku','omotesando','ginza','tsukiji','toyosu','roppongi','asakusa','ueno','akihabara','ikebukuro','otsuka','nihonbashi','marunouchi','shimokitazawa','ebisu','nakameguro','meguro','daikanyama','aoyama','azabu','sangenjaya','koenji','kichijoji','yurakucho','shimbashi','shinbashi','ningyocho','kagurazaka'],
     Kyoto: ['kyoto','gion','pontocho','kawaramachi','kiyamachi','sanjo','shijo','nishiki','arashiyama','fushimi','higashiyama','kiyomizu','kinkakuji','karasuma','demachiyanagi'],
-    Osaka: ['osaka','namba','dotonbori','shinsaibashi','umeda','kitashinchi','shinsekai','tennoji','tsuruhashi','kuromon','nakazakicho','honmachi','nipponbashi','abeno','kyobashi','tenma','temma'],
+    Osaka: ['osaka castle','osakajo','osaka','namba','dotonbori','shinsaibashi','umeda','kitashinchi','shinsekai','tennoji','tsuruhashi','kuromon','nakazakicho','honmachi','nipponbashi','abeno','kyobashi','tenma','temma'],
     Kobe: ['kobe','sannomiya','motomachi','kitano','nankinmachi','harborland','arima'],
     Nara: ['nara','naramachi'],
     Okayama: ['okayama','kurashiki'],
@@ -23,7 +23,7 @@
   ];
   // Tage, an denen du ohnehin im jeweiligen Viertel bist
   const PREF = {
-    namba:[9,6], dotonbori:[9,6], shinsaibashi:[9,6], nipponbashi:[9,6], kuromon:[9,6],
+    'osaka castle':[7], osakajo:[7], namba:[9,6], dotonbori:[9,6], shinsaibashi:[9,6], nipponbashi:[9,6], kuromon:[9,6],
     umeda:[8,7], kitashinchi:[8,7], nakazakicho:[8], shinsekai:[8], tennoji:[7,8], abeno:[7,8], kyobashi:[7], tenma:[7], temma:[7],
     gion:[4,5], pontocho:[4,5], kiyamachi:[4,5], kawaramachi:[4,5], sanjo:[4,5], shijo:[4,5], nishiki:[5], higashiyama:[5], kiyomizu:[5], arashiyama:[6], kinkakuji:[6], fushimi:[4],
     harajuku:[2], omotesando:[2], shibuya:[2,1], shinjuku:[2], kabukicho:[2], ikebukuro:[2], otsuka:[2],
@@ -81,13 +81,17 @@
     return { name: clean(parts[0]), area: clean(parts.slice(1).join(', ')) };
   }
 
-  function sectionAfter(lines, re) {
+  function sectionAfter(lines, re, many) {
     for (let i = 0; i < lines.length; i++) {
       const m = lines[i].match(re); if (!m) continue;
-      let rest = lines[i].slice(m.index + m[0].length).replace(/^\s*[:：\-–]\s*/, '');
-      rest = clean(rest);
-      if (rest.length >= 3) return rest;
-      for (let j = i + 1; j < lines.length && j <= i + 2; j++) { const c = clean(lines[j]); if (c) return c; }
+      let rest = clean(lines[i].slice(m.index + m[0].length).replace(/^\s*[:：\-–]\s*/, ''));
+      const out = rest.length >= 3 ? [rest] : [];
+      for (let j = i + 1; j < lines.length && j <= i + (many ? 4 : 2); j++) {
+        if (out.length && (!many || STOP_LABEL.test(lines[j]) && !/^(lunch|dinner|mittag|abend)/i.test(lines[j]))) break;
+        const c = clean(lines[j]); if (c) out.push(c);
+        if (!many && out.length) break;
+      }
+      if (out.length) return out.join(', ').replace(/,\s*(PM|AM)\)/g, ' $1)');
     }
     return '';
   }
@@ -149,7 +153,7 @@
     else if (/\b(cocktail|bar|speakeasy|whisk(e)?y|sake bar|nightlife|club|highball)\b/.test(low) && !/\b(restaurant|ramen|sushi|wagyu|yakiniku|steak|cafe|bakery|menu)\b/.test(low)) out.kind = 'Abend';
 
     // 5) Details
-    out.hours = sectionAfter(lines, /\b(hours?|open(?:ing)?(?: hours)?|営業時間)\b/i).replace(/everyday/i, 'täglich').replace(/daily/i, 'täglich');
+    out.hours = sectionAfter(lines, /\b(hours?|open(?:ing)?(?: hours)?|営業時間)\b/i, true).replace(/everyday/i, 'täglich').replace(/daily/i, 'täglich');
     out.budget = sectionAfter(lines, /\b(budget|price|cost|予算)\b/i);
     const menu = sectionAfter(lines, /\b(featured menu|menu|must[- ]?try|what (?:i|we) (?:ate|ordered)|ordered)\b/i);
     const cm = low.match(/closed(?: on)?\s*[:：]?\s*((?:(?:sun|mon|tue|wed|thu|fri|sat)[a-z]*[\s,&/and]*)+)/);

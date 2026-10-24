@@ -456,12 +456,12 @@ async function fromLink(){
 }
 let tessP=null;
 function loadTess(){return tessP||(tessP=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";sc.onload=()=>res(window.Tesseract);sc.onerror=()=>{tessP=null;rej(new Error("load"))};document.head.appendChild(sc)}))}
-function prepCanvas(im,lightText,crop){
+function prepCanvas(im,mode,crop){
   const W=im.naturalWidth,H=im.naturalHeight;const x0=0,y0=crop?Math.round(H*.33):0,w=crop?Math.round(W*.88):W,h=crop?Math.round(H*.6):H;
   const sc=Math.min(1,1400/w);const c=document.createElement("canvas");c.width=Math.round(w*sc);c.height=Math.round(h*sc);
   const g=c.getContext("2d");g.drawImage(im,x0,y0,w,h,0,0,c.width,c.height);
   const d=g.getImageData(0,0,c.width,c.height),a=d.data;
-  for(let i=0;i<a.length;i+=4){const y=.299*a[i]+.587*a[i+1]+.114*a[i+2];const v=lightText?(y>150?0:255):(y<110?0:255);a[i]=a[i+1]=a[i+2]=v}
+  for(let i=0;i<a.length;i+=4){const y=.299*a[i]+.587*a[i+1]+.114*a[i+2];const v=mode==="white"?(Math.min(a[i],a[i+1],a[i+2])>210?0:255):mode==="light"?(y>150?0:255):(y<110?0:255);a[i]=a[i+1]=a[i+2]=v}
   g.putImageData(d,0,0);return c}
 async function fromShot(file){
   tkStatus("Lese den Text aus dem Screenshot … (beim ersten Mal 10–20 Sekunden)");
@@ -469,11 +469,13 @@ async function fromShot(file){
   let T;try{T=await loadTess()}catch(e){tkStatus("Die Texterkennung braucht beim ersten Mal Internet. Bitte mit Netz noch einmal versuchen.",true);return}
   const url=URL.createObjectURL(file);const im=new Image();
   try{await new Promise((r,j)=>{im.onload=r;im.onerror=j;im.src=url})}catch(e){tkStatus("Das Bild konnte nicht geöffnet werden.",true);return}
-  let text="";
+  let text="",fallback="";
   try{
-    for(const [light,crop] of [[true,true],[false,false],[true,false]]){
-      const out=await T.recognize(prepCanvas(im,light,crop),"eng");text=out.data.text||"";
-      if(Rec.fromText(text).name&&Rec.fromText(text).city)break;
+    for(const [mode,crop] of [["white",true],["light",true],["white",false],["dark",false]]){
+      const out=await T.recognize(prepCanvas(im,mode,crop),"eng");const t=out.data.text||"";const r=Rec.fromText(t);
+      if(r.name&&r.city&&r.sure){text=t;break}
+      if(!fallback&&r.name&&r.city)fallback=t;
+      text=fallback||t;
     }
   }catch(e){tkStatus("Die Texterkennung hat nicht geklappt. Trag den Namen unten selbst ein.",true)}
   URL.revokeObjectURL(url);
