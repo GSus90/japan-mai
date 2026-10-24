@@ -43,7 +43,7 @@ h3{font-size:1rem;margin:0}
 .muted{color:var(--muted)}
 .small{font-size:.86rem}
 /* Tab bar */
-nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:4px max(8px,env(safe-area-inset-left,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:4px max(8px,env(safe-area-inset-left,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
 nav.tabbar button{border:0;background:none;height:var(--tab-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:.7rem;color:var(--muted);font-weight:500}
 nav.tabbar button svg{width:24px;height:24px}
 nav.tabbar button[aria-current="true"]{color:var(--stamp)}
@@ -68,6 +68,23 @@ a.namelink{text-decoration:none;color:inherit;display:inline}
 a.namelink .pin{display:inline-block;width:14px;height:14px;margin-left:5px;vertical-align:-1px;color:var(--stamp)}
 a.thumblink{display:block}
 .src{font-size:.78rem;color:var(--muted)}
+.fxcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.fxrow{display:flex;align-items:center;gap:10px;padding:14px 16px}
+.fxrow+.fxrow{border-top:1px solid var(--line)}
+.fxrow .cur{font-family:var(--serif);font-size:1.9rem;font-weight:700;width:36px;text-align:center;color:var(--stamp)}
+.fxrow label{flex:1;min-width:0;display:flex;flex-direction:column}
+.fxrow label span{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fxrow input{border:0;background:none;font-size:2.1rem;font-weight:700;font-variant-numeric:tabular-nums;padding:2px 0;width:100%;min-width:0;outline:none}
+.fxrow input:focus-visible{outline:none}
+.fxrow:focus-within{background:var(--surface2)}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.quick button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:.88rem;font-variant-numeric:tabular-nums}
+.ratebar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.84rem;color:var(--muted)}
+.ratebar button{border:0;background:none;color:var(--stamp);font-weight:600;padding:4px 0}
+table.fxt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+table.fxt td{padding:8px 4px;border-bottom:1px solid var(--line)}
+table.fxt td:last-child{text-align:right;color:var(--muted)}
+.eurnote{color:var(--muted);white-space:nowrap}
 .addtitle{font-family:var(--serif);font-size:1.2rem}
 .filebtn{position:relative;overflow:hidden}
 .filebtn input{position:absolute;inset:0;opacity:0}
@@ -195,12 +212,14 @@ details ul{padding-left:18px;margin:8px 0 2px}
 <section class="screen" id="v-day" hidden></section>
 <section class="screen" id="v-book" hidden></section>
 <section class="screen" id="v-wish" hidden></section>
+<section class="screen" id="v-fx" hidden></section>
 <section class="screen" id="v-more" hidden></section>
 
 <nav class="tabbar" aria-label="Bereiche">
   <button data-tab="trip" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5 9 4l6 2 5-1.5V18l-5 1.5-6-2-5 1.5z"/><path d="M9 4v13.5M15 6v13.5"/></svg>Reise</button>
   <button data-tab="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg>Buchungen</button>
   <button data-tab="wish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Merkliste</button>
+  <button data-tab="fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l6 8 6-8M12 12v8M7.5 13h9M7.5 16.5h9"/></svg>Yen</button>
   <button data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mehr</button>
 </nav>
 <div class="toast" id="toast" hidden></div>
@@ -261,7 +280,7 @@ function bookState(id){return S.book[id]||{status:"offen",number:"",imgs:[]}}
 let tab="trip",curDay=0;
 function show(v){document.querySelectorAll(".screen").forEach(s=>s.hidden=s.id!=="v-"+v);window.scrollTo(0,0)}
 function goTab(t){tab=t;document.querySelectorAll("nav.tabbar button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===t));
-  ({trip:renderTrip,book:renderBook,wish:renderWish,more:renderMore})[t]();show(t)}
+  ({trip:renderTrip,book:renderBook,wish:renderWish,fx:renderFx,more:renderMore})[t]();show(t)}
 function openDay(i){curDay=i;renderDay();show("day")}
 document.querySelector("nav.tabbar").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(b)goTab(b.dataset.tab)});
 
@@ -312,7 +331,7 @@ function runSearch(){
     h+=`<div class="hit"><a class="thumblink" href="${p.maps}" target="_blank" rel="noopener" aria-label="${esc(p.name)} in Google Maps">${p.photo?`<img src="photos/${p.photo}.jpg" alt="" loading="lazy">`:p.ownImg?`<img data-img="${p.ownImg}" alt="">`:'<span class="ph"></span>'}</a>
       <div class="tx"><span class="kind">${esc(p.typ)} · ${esc(p.stadt)}</span>
       <a class="namelink" href="${p.maps}" target="_blank" rel="noopener"><b>${hl(p.name,raw)}</b>${PIN}</a>
-      ${p.info?`<span class="muted small">${hl(p.info,raw)}</span>`:""}
+      ${p.info?`<span class="muted small">${eur(hl(p.info,raw))}</span>`:""}
       <div class="actions">${p.day!=null?`<button class="chip" data-day="${p.day}">Tag ${p.day+1} · ${WD[dateOf(p.day).getDay()]} ${fmt(dateOf(p.day))}${p.zeit?" · "+esc(p.zeit):""}</button>`:`<button class="chip" data-gowish>Merkliste</button>`}
 </div>${srcLine(p)}</div></div>`});
   box.innerHTML=h+"</div>";hydrate(box);
@@ -336,7 +355,7 @@ function renderDay(){
       ${s.photo&&s.photo!==D.photo?`<a class="thumblink" href="${s.maps}" target="_blank" rel="noopener" aria-label="${esc(s.name)} in Google Maps"><img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy"></a>`:s.ownImg?`<figure style="margin:0"><a class="thumblink" href="${s.maps}" target="_blank" rel="noopener"><img class="thumb" data-img="${s.ownImg}" alt=""></a></figure>`:""}
       <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.quelle&&s.quelle!=="Reiseführer"?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
       <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
-      ${s.info?`<div class="muted small">${esc(s.info)}</div>`:""}
+      ${s.info?`<div class="muted small">${eur(esc(s.info))}</div>`:""}
       ${srcLine(s)}
       ${closedOn(s,i)?`<div class="flag">An einem ${WD[d.getDay()]} meist geschlossen. Tag tauschen oder Öffnungszeiten prüfen.</div>`:""}
       <div class="actions"><a class="chip" href="${s.maps}" target="_blank" rel="noopener">Karte</a>
@@ -483,7 +502,7 @@ async function renderDraft(){
     ${draft.manual?"":`<div class="eyebrow">${r.name&&r.sure?"Erkannt":"Bitte prüfen"}</div>`}
     ${r.name?`<div class="recname">${esc(r.name)}</div><div class="muted small">${esc([r.kind,r.city,r.area&&r.area.toLowerCase()!==String(r.city).toLowerCase()?r.area:""].filter(Boolean).join(" · "))}</div>`:""}
     ${r.name?`<div class="sug"><span class="eyebrow">Vorschlag</span><b>${esc(dayTxt)}</b><span class="muted small">${esc(g.why||"")}</span></div>`:""}
-    ${r.info?`<div class="muted small">${esc(r.info)}</div>`:""}
+    ${r.info?`<div class="muted small">${eur(esc(r.info))}</div>`:""}
     <div class="btnrow">${r.name?`<button class="btn primary" id="recAdd">${g.day!=null?"In Tag "+(g.day+1)+" einplanen":"Auf die Merkliste"}</button>`:""}${r.name&&g.day!=null?`<button class="btn" id="recKeep">Nur merken</button>`:""}<button class="btn" id="recCancel">Verwerfen</button></div>
     ${r.name?`<a class="chip" style="align-self:flex-start" href="${mapUrl([r.name,r.area,r.city].filter(Boolean).join(" "))}" target="_blank" rel="noopener">In Google Maps prüfen</a>`:""}
     <details id="recEdit" ${!r.name||draft.manual?"open":""}><summary>Ändern</summary>
@@ -563,7 +582,7 @@ function storySlides(i){
   const slides=[{bg:dayBg,dur:5000,head,html:`<div class="eyebrow" style="color:rgba(255,255,255,.75)">${esc(D.stadt)} · ${st.length} Stationen</div><h2>${esc(D.titel)}</h2><p>${fmtLong(d)}</p>`}];
   st.forEach(s=>{const own=!s.photo&&s.ownImg;
     slides.push({bg:s.photo?`photos/${s.photo}.jpg`:dayBg,img:own?s.ownImg:null,soft:!s.photo&&!own,dur:s.typ==="Fahrt"?4000:5500,head,
-      html:`<div><span class="stime">${esc(s.zeit)}</span><span class="sk">${esc(s.typ)}</span></div><h2>${esc(s.name)}</h2>${s.info?`<p>${esc(s.info)}</p>`:""}
+      html:`<div><span class="stime">${esc(s.zeit)}</span><span class="sk">${esc(s.typ)}</span></div><h2>${esc(s.name)}</h2>${s.info?`<p>${eur(esc(s.info))}</p>`:""}
         <div class="meta">${[s.quelle?"Quelle: "+esc(s.quelle):"",s.reservierung?"Reservierung "+esc(bookState(s.id).status):"",closedOn(s,i)?"Ruhetag prüfen":""].filter(Boolean).join(" · ")}</div>`})});
   slides.push({bg:dayBg,soft:true,dur:8000,head,html:`<div class="eyebrow" style="color:rgba(255,255,255,.75)">Der Tag im Überblick</div><h2>${esc(D.titel)}</h2>
     <ol>${st.map(s=>`<li><b>${esc(s.zeit)}</b>${esc(s.name)}</li>`).join("")}</ol><div class="meta">Übernachtung: ${esc(D.unterkunft)}</div>`});
@@ -617,6 +636,54 @@ function closeStory(){if(!ST)return;cancelAnimationFrame(ST.raf);ST.el.remove();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-story]");if(b)openStory(+b.dataset.story)});
 document.addEventListener("keydown",e=>{if(!ST)return;if(e.key==="Escape")closeStory();if(e.key==="ArrowRight")goSlide(ST.k+1);if(e.key==="ArrowLeft")goSlide(ST.k-1);if(e.key===" "){e.preventDefault();pauseStory(!ST.paused)}});
 document.addEventListener("visibilitychange",()=>{if(ST)pauseStory(document.hidden)});
+
+/* ---------- Yen-Umrechner ---------- */
+const FXKEY="jm-fx-v1";
+let FX={rate:185.75,date:"2026-08-27",src:"Richtwert",fee:0};
+try{const f=JSON.parse(localStorage.getItem(FXKEY)||"null");if(f&&f.rate)FX={...FX,...f}}catch(e){}
+function saveFx(){try{localStorage.setItem(FXKEY,JSON.stringify(FX))}catch(e){}}
+const effRate=()=>FX.rate/(1+(+FX.fee||0)/100);
+const fmtEur=v=>v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtYen=v=>Math.round(v).toLocaleString("de-DE");
+const parseNum=t=>{t=String(t||"").replace(/\s/g,"");if(/^\d{1,3}([.,]\d{3})+$/.test(t))t=t.replace(/[.,]/g,"");else t=t.replace(/\./g,"").replace(",",".");return parseFloat(t)||0};
+function eur(html){return html.replace(/(¥|￥|JPY\s?)\s?(\d[\d.,]*\d|\d)(\+?)/g,(m,c,n)=>{const v=parseNum(n);if(!v)return m;return `${m} <span class="eurnote">(≈ ${fmtEur(v/effRate())} €)</span>`})}
+async function refreshFx(force){
+  const age=Date.now()-(FX.fetched||0);
+  if(!force&&age<6*3600e3)return false;
+  const tries=[
+    async()=>{const r=await fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=JPY");const j=await r.json();return{rate:j.rates.JPY,date:j.date,src:"EZB"}},
+    async()=>{const r=await fetch("https://open.er-api.com/v6/latest/EUR");const j=await r.json();return{rate:j.rates.JPY,date:new Date(j.time_last_update_unix*1000).toISOString().slice(0,10),src:"ExchangeRate-API"}}
+  ];
+  for(const t of tries){try{const x=await t();if(x.rate>50&&x.rate<400){FX={...FX,...x,fetched:Date.now()};saveFx();return true}}catch(e){}}
+  return false;
+}
+function renderFx(){
+  const d=FX.date?new Date(FX.date+"T12:00:00").toLocaleDateString("de-AT"):"";
+  let h=`<div class="topbar"><div><div class="eyebrow">Umrechner</div><h1>Yen ↔ Euro</h1></div></div>
+  <div class="fxcard">
+    <div class="fxrow"><span class="cur">¥</span><label><span>Yen</span><input id="fxY" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Betrag in Yen"></label></div>
+    <div class="fxrow"><span class="cur">€</span><label><span>Euro</span><input id="fxE" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Betrag in Euro"></label></div>
+  </div>
+  <div class="quick">${[500,1000,3000,5000,10000,30000].map(v=>`<button data-yen="${v}">${fmtYen(v)} ¥</button>`).join("")}</div>
+  <div class="ratebar"><span>1 € = ${FX.rate.toLocaleString("de-AT",{maximumFractionDigits:2})} ¥ · ${esc(FX.src)}${d?", Stand "+d:""}</span><button id="fxRefresh">Kurs aktualisieren</button></div>
+  <h2>Kartengebühr</h2>
+  <div class="card"><label class="field"><span>Aufschlag deiner Karte in %</span><input id="fxFee" inputmode="decimal" value="${String(FX.fee||0).replace(".",",")}"></label>
+  <p class="muted small" style="margin:0">Viele Kreditkarten verlangen 1–2 % Auslandsgebühr. Trag sie ein, dann rechnet die App mit dem echten Preis. Bei der Frage am Automaten oder an der Kasse immer <b>in Yen zahlen</b> wählen, sonst rechnet die Bank des Händlers mit schlechtem Kurs um.</p></div>
+  <h2>Zum Merken</h2>
+  <table class="fxt">${[[100,"Getränk am Automaten"],[1000,"Ramen, Konbini-Einkauf"],[3000,"Mittagsmenü, Museum"],[10000,"Gutes Abendessen"],[30000,"Omakase, Kaiseki"]].map(([y,t])=>`<tr><td><b>${fmtYen(y)} ¥</b> · ${t}</td><td>≈ ${fmtEur(y/effRate())} €</td></tr>`).join("")}</table>
+  <p class="muted small">Faustregel: Yen durch ${Math.round(effRate()/10)*10} teilen, oder 1.000 ¥ ≈ ${fmtEur(1000/effRate())} €. Ohne Netz rechnet die App mit dem zuletzt geladenen Kurs.</p>`;
+  $("#v-fx").innerHTML=h;
+  const Y=$("#fxY"),E=$("#fxE");
+  const fromY=()=>{const v=parseNum(Y.value);E.value=Y.value.trim()?fmtEur(v/effRate()):""};
+  const fromE=()=>{const v=parseNum(E.value);Y.value=E.value.trim()?fmtYen(v*effRate()):""};
+  Y.addEventListener("input",fromY);E.addEventListener("input",fromE);
+  if(FX.lastY){Y.value=fmtYen(FX.lastY);fromY()}
+  Y.addEventListener("change",()=>{FX.lastY=parseNum(Y.value);saveFx()});
+  $("#fxFee").addEventListener("change",e=>{FX.fee=Math.max(0,Math.min(10,parseNum(e.target.value)));saveFx();renderFx()});
+  $("#fxRefresh").onclick=async e=>{e.target.textContent="Lade …";const ok=await refreshFx(true);renderFx();toast(ok?"Kurs aktualisiert":"Kein Netz – alter Kurs bleibt")};
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-yen]");if(!b)return;const Y=$("#fxY");Y.value=fmtYen(+b.dataset.yen);Y.dispatchEvent(new Event("input"));FX.lastY=+b.dataset.yen;saveFx()});
+refreshFx(false).then(ok=>{if(ok&&tab==="fx")renderFx()});
 
 /* ---------- Start ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2000)}

@@ -39,6 +39,7 @@
     .replace(/^[^A-Za-z0-9぀-ヿ一-龯]+|[^A-Za-z0-9぀-ヿ一-龯)'’.!&]+$/g, '')
     .replace(/\s{2,}/g, ' ').trim();
 
+  const isNoise = l => !/[A-Za-z]{4,}|[\u3040-\u30ff\u4e00-\u9faf]{2,}/.test(clean(l));
   function normalizeText(raw) {
     let t = String(raw || '').replace(/\r/g, '');
     // TikTok liefert die Beschreibung manchmal einzeilig: vor bekannten Stichworten Zeilen umbrechen
@@ -106,7 +107,7 @@
       const before = clean(lines[i].slice(0, m.index).replace(/post\s*\d+\s*\|?/i, ''));
       // „Ramen Nagi 📍 Shinjuku“: Name steht vor der Nadel
       if (m[1] === '📍' && before.length >= 3 && !STOP_LABEL.test(before)) { seg = before + ', ' + seg; }
-      if (clean(seg).length < 4 || /^[a-z]{1,3},?$/i.test(clean(seg))) seg = '';
+      if (isNoise(seg)) seg = '';
       for (let j = i + 1; j < lines.length && j <= i + 3; j++) {
         if (STOP_LABEL.test(lines[j]) || LABEL.test(lines[j])) break;
         seg += (seg ? '\n' : '') + lines[j];
@@ -114,7 +115,7 @@
       if (clean(seg)) { loc = seg; break; }
     }
     if (loc) {
-      const ls = loc.split('\n').map(clean).filter(Boolean);
+      const ls = loc.split('\n').map(clean).filter(l => l && !isNoise(l));
       if (ls.length >= 2) {
         // erste Zeile = Name, falls sie nicht selbst schon die Gegend ist
         const first = splitNameArea(ls[0]);
@@ -125,10 +126,10 @@
     }
     // 2) Kein Ortsblock: erste sinnvolle Zeile als Name (unsicher)
     if (!out.name) {
-      const cand = lines.map(clean).find(l => l.length >= 3 && l.length <= 60 && !/^#/.test(l) && !STOP_LABEL.test(l) && !/^(post|part|day|tag)\s*\d+/i.test(l));
+      const cand = lines.map(clean).find(l => !isNoise(l) && l.length >= 3 && l.length <= 60 && !/^#/.test(l) && !STOP_LABEL.test(l) && !/^(post|part|day|tag)\s*\d+/i.test(l));
       if (cand) { const r = splitNameArea(cand); out.name = r.name; out.area = out.area || r.area; }
     }
-    out.name = out.name.replace(/^(post\s*\d+\s*)/i, '').replace(/\s+(in|at|near|@|bei|im)$/i, '').replace(/\s*[|·]\s*$/, '').trim();
+    out.name = out.name.replace(/^(post\s*\d+\s*)/i, '').replace(/\s+(in|at|near|@|bei|im)$/i, '').replace(/^(?:[A-Za-z]{1,2}[^A-Za-z\s]*\s+){2,}(?=[A-Za-z]{3,})/, '').replace(/\s*[|·]\s*$/, '').trim();
 
     // 3) Stadt: Ortsblock zählt fünffach, Text doppelt, Hashtags einfach
     const score = {}, hits = [];
