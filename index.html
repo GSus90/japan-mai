@@ -68,6 +68,37 @@ a.namelink{text-decoration:none;color:inherit;display:inline}
 a.namelink .pin{display:inline-block;width:14px;height:14px;margin-left:5px;vertical-align:-1px;color:var(--stamp)}
 a.thumblink{display:block}
 .src{font-size:.78rem;color:var(--muted)}
+.seg2{grid-template-columns:1fr 1fr;margin-bottom:16px}
+.pp{margin-left:6px;color:var(--muted);font-weight:600;letter-spacing:.02em;text-transform:none}
+.daybudget{margin:-6px 0 14px}
+.daybudget .linkbtn{font-size:inherit}
+.bhero{--b1:#B9D2E6;--b2:#F68C7A;--b3:#8DC5AF;background:var(--accent);color:var(--on-accent);border-radius:16px;padding:16px}
+@media (prefers-color-scheme:dark){.bhero{--b1:#172E46;--b2:#BC4334;--b3:#387268}}
+.bhero .eyebrow,.bhero .muted{color:inherit;opacity:.8}
+.bbig{font-family:var(--serif);font-size:2.4rem;font-weight:700;line-height:1.1;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.bbar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;margin:14px 0 10px}
+.blegend{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:.9rem;font-variant-numeric:tabular-nums}
+.blegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px}
+.brow2{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:600}
+.stepper{display:flex;align-items:center;gap:14px}
+.stepper button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface2);font-size:1.3rem;line-height:1}
+.stepper b{font-size:1.3rem;min-width:1.5ch;text-align:center;font-variant-numeric:tabular-nums}
+details.bday{padding:0;overflow:hidden}
+details.bday summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;list-style:none}
+details.bday summary::-webkit-details-marker{display:none}
+details.bday summary>span:first-child{display:flex;flex-direction:column;min-width:0}
+.bdt{font-family:var(--serif);font-size:1.02rem}
+.bsum{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.brow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:8px 14px;border-top:1px solid var(--line)}
+.brow input[type=checkbox]{width:20px;height:20px;accent-color:var(--stamp);margin:0}
+.brow.off .bname{color:var(--muted)}
+.brow.off .bname>:first-child{text-decoration:line-through}
+.bname{min-width:0;display:flex;flex-direction:column;font-size:.92rem;font-weight:600}
+.bname .muted{font-weight:400}
+.bprice{display:flex;align-items:center;gap:2px;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+.bprice input{width:78px;text-align:right;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:16px;font-variant-numeric:tabular-nums}
+.brow.snack .bname{font-weight:500;color:var(--muted)}
+.bfoot{padding:10px 14px 12px;border-top:1px solid var(--line);font-size:.84rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
 .fxcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .fxrow{display:flex;align-items:center;gap:10px;padding:14px 16px}
 .fxrow+.fxrow{border-top:1px solid var(--line)}
@@ -219,7 +250,7 @@ details ul{padding-left:18px;margin:8px 0 2px}
   <button data-tab="trip" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5 9 4l6 2 5-1.5V18l-5 1.5-6-2-5 1.5z"/><path d="M9 4v13.5M15 6v13.5"/></svg>Reise</button>
   <button data-tab="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg>Buchungen</button>
   <button data-tab="wish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Merkliste</button>
-  <button data-tab="fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l6 8 6-8M12 12v8M7.5 13h9M7.5 16.5h9"/></svg>Yen</button>
+  <button data-tab="fx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l6 8 6-8M12 12v8M7.5 13h9M7.5 16.5h9"/></svg>Geld</button>
   <button data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mehr</button>
 </nav>
 <div class="toast" id="toast" hidden></div>
@@ -265,7 +296,7 @@ const fmtLong=d=>d.toLocaleDateString("de-AT",{weekday:"long",day:"numeric",mont
 function stopsOf(i){
   const base=TRIP[i].stops.map(s=>({...s,own:false}));
   const own=S.places.filter(p=>p.day===i).map(p=>({id:"p-"+p.id,zeit:p.time||"12:00",typ:p.kind||"Essen",name:p.name,info:p.info,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),tiktok:p.url||null,
-    reservierung:p.res?{art:p.res}:null,ruhetage:p.closed||[],photo:null,ownImg:p.img||null,own:true,pid:p.id,quelle:srcOf(p),quelleUrl:p.url||null}));
+    reservierung:p.res?{art:p.res}:null,ruhetage:p.closed||[],photo:null,ownImg:p.img||null,own:true,pid:p.id,quelle:srcOf(p),quelleUrl:p.url||null,preis:p.price!=null?p.price:null}));
   return [...base,...own].sort((a,b)=>a.zeit.localeCompare(b.zeit));
 }
 function srcOf(p){if(p.src)return p.src;const u=p.url||"";return /tiktok\./i.test(u)?"TikTok":/instagram\./i.test(u)?"Instagram":/youtu/i.test(u)?"YouTube":u?"Link":"Eigene Idee"}
@@ -349,11 +380,12 @@ function renderDay(){
   let h=`<div class="hero">${D.photo?`<img src="photos/${D.photo}.jpg" alt="">`:""}<button class="back" data-back aria-label="Zurück">‹</button></div>
     <div class="eyebrow">Tag ${i+1} · ${fmtLong(d)}</div><h1>${esc(D.titel)}</h1>
     <p class="muted small" style="margin:6px 0 14px"><span class="pill city">${esc(D.stadt)}</span> Übernachtung: ${esc(D.unterkunft)}</p>
+    ${(()=>{const c=dayCost(i),n=bset().persons,t=(c.e+c.f)*n;return t?`<p class="muted small daybudget">Geschätzt heute: <b>${fmtEur(t/effRate())} €</b> für ${n} ${n===1?"Person":"Personen"} (Eintritte & Essen) · <button class="linkbtn" data-gobudget="${i}">Details</button></p>`:""})()}
     <button class="btn primary playbtn" data-story="${i}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Tag als Story ansehen</button><ol class="tl">`;
   st.forEach(s=>{const done=!!S.done[s.id],b=s.reservierung?bookState(s.id):null;
     h+=`<li><div class="time">${esc(s.zeit)}</div><div class="stop ${done?"done":""}">
       ${s.photo&&s.photo!==D.photo?`<a class="thumblink" href="${s.maps}" target="_blank" rel="noopener" aria-label="${esc(s.name)} in Google Maps"><img class="thumb" src="photos/${s.photo}.jpg" alt="" loading="lazy"></a>`:s.ownImg?`<figure style="margin:0"><a class="thumblink" href="${s.maps}" target="_blank" rel="noopener"><img class="thumb" data-img="${s.ownImg}" alt=""></a></figure>`:""}
-      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.quelle&&s.quelle!=="Reiseführer"?`<span class="own">${esc(s.quelle)}</span>`:""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
+      <div class="body"><div class="row"><div class="name"><div class="kind">${esc(s.typ)}${s.quelle&&s.quelle!=="Reiseführer"?`<span class="own">${esc(s.quelle)}</span>`:""}${katOf(s)?(counted(s,i)?(priceOf(s)?`<span class="pp">¥${fmtYen(priceOf(s))} p. P.</span>`:`<span class="pp">gratis</span>`):`<span class="pp">Alternative</span>`):""}</div>${s.typ==="Fahrt"?esc(s.name):`<a class="namelink" href="${s.maps}" target="_blank" rel="noopener">${esc(s.name)}${PIN}</a>`}</div>
       <button class="stamp" data-done="${s.id}" aria-pressed="${done}" aria-label="${esc(s.name)} erledigt"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>
       ${s.info?`<div class="muted small">${eur(esc(s.info))}</div>`:""}
       ${srcLine(s)}
@@ -533,6 +565,7 @@ async function savePlace(day,time){
   const r=draft.rec;if(!r.name)return;
   const p={id:Date.now().toString(36),src:draft.link?"":(draft.manual?"Eigene Idee":"TikTok"),url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
     q:[r.name,r.area,r.city].filter(Boolean).join(" "),closed:r.closed||[]};
+  {const m=String(r.budget||"").match(/(\d[\d.,]*)/);if(m){const v=parseNum(m[1]);if(v>=100&&v<200000)p.price=v}}
   if(draft.img)p.img=await imgPut(draft.img);
   S.places.push(p);save();draft=null;renderWish();
   tkStatus(day==null?`„${p.name}“ ist auf der Merkliste.`:`„${p.name}“ ist an Tag ${day+1} um ${p.time} eingeplant.`);
@@ -639,6 +672,57 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-story]");i
 document.addEventListener("keydown",e=>{if(!ST)return;if(e.key==="Escape")closeStory();if(e.key==="ArrowRight")goSlide(ST.k+1);if(e.key==="ArrowLeft")goSlide(ST.k-1);if(e.key===" "){e.preventDefault();pauseStory(!ST.paused)}});
 document.addEventListener("visibilitychange",()=>{if(ST)pauseStory(document.hidden)});
 
+/* ---------- Budget ---------- */
+let fxView="budget";const openBDays=new Set();
+function bset(){if(!S.budget)S.budget={persons:3,daily:2000,ov:{},skip:{}};return S.budget}
+function katOf(s){if(s.typ==="Fahrt")return null;if(s.kat)return s.kat;return s.typ==="Sehen"?"Eintritt":"Essen"}
+function priceOf(s){const b=bset();if(b.ov[s.id]!=null)return b.ov[s.id];if(s.preis!=null)return s.preis;return s.typ==="Sehen"?0:(s.zeit>="16:00"?5000:2500)}
+const toMin=t=>{const [h,m]=String(t).split(":").map(Number);return h*60+(m||0)};
+// Zwei Essen innerhalb von 45 Minuten: das günstigere gilt als Alternative
+function altMap(i){const ess=stopsOf(i).filter(s=>s.typ==="Essen"),m={};
+  for(let a=0;a<ess.length;a++)for(let b=a+1;b<ess.length;b++){const x=ess[a],y=ess[b];
+    if(Math.abs(toMin(x.zeit)-toMin(y.zeit))<=45){const cheap=priceOf(x)<=priceOf(y)?x:y,other=cheap===x?y:x;if(!m[cheap.id])m[cheap.id]=other.name}}
+  return m}
+function counted(s,i){const b=bset();if(b.skip[s.id]!=null)return!b.skip[s.id];return!altMap(i)[s.id]}
+function dayCost(i){let e=0,f=0;for(const s of stopsOf(i)){if(!katOf(s)||!counted(s,i))continue;const p=priceOf(s);if(katOf(s)==="Eintritt")e+=p;else f+=p}return{e,f}}
+function renderBudget(){
+  const b=bset(),n=b.persons,R=effRate();let E=0,F=0;
+  for(let i=0;i<14;i++){const c=dayCost(i);E+=c.e;F+=c.f}
+  const SN=b.daily*14,pp=E+F+SN,tot=pp*n,pct=v=>pp?(v/pp*100).toFixed(1):0;
+  let h=`<div class="bhero"><div class="eyebrow">Geschätzt für ${n} ${n===1?"Person":"Personen"} · 14 Tage</div>
+    <div class="bbig">${fmtEur(tot/R)} €</div><div class="muted small">¥${fmtYen(tot)} · pro Person ≈ ${fmtEur(pp/R)} €</div>
+    <div class="bbar" aria-hidden="true"><i style="width:${pct(E)}%;background:var(--b1)"></i><i style="width:${pct(F)}%;background:var(--b2)"></i><i style="width:${pct(SN)}%;background:var(--b3)"></i></div>
+    <div class="blegend"><span><i style="background:var(--b1)"></i>Eintritte & Shows</span><b>${fmtEur(E*n/R)} €</b>
+      <span><i style="background:var(--b2)"></i>Essen & Trinken im Plan</span><b>${fmtEur(F*n/R)} €</b>
+      <span><i style="background:var(--b3)"></i>Frühstück & Snacks</span><b>${fmtEur(SN*n/R)} €</b></div></div>
+  <div class="card" style="margin-top:12px"><div class="brow2"><span>Personen</span><div class="stepper"><button data-pers="-1" aria-label="Weniger">−</button><b>${n}</b><button data-pers="1" aria-label="Mehr">+</button></div></div>
+    <label class="field"><span>Frühstück & Snacks pro Person und Tag (¥)</span><input id="bDaily" inputmode="numeric" value="${fmtYen(b.daily)}"></label>
+    <p class="muted small" style="margin:0">Ohne Hotels, Flüge und Bahn. Alle Preise sind Schätzungen pro Person – antippen und an echte Preise anpassen. Sind zwei Essen zur selben Zeit geplant, zählt nur das teurere, das andere ist als Alternative markiert.</p></div>
+  <h2>Pro Tag</h2><div class="list">`;
+  for(let i=0;i<14;i++){const D=TRIP[i],d=dateOf(i),c=dayCost(i),alt=altMap(i),dt=(c.e+c.f+b.daily)*n;
+    h+=`<details class="bday" data-bday="${i}" ${openBDays.has(i)?"open":""}><summary><span><span class="eyebrow">Tag ${i+1} · ${WD[d.getDay()]} ${fmt(d)}</span><b class="bdt">${esc(D.titel)}</b></span><span class="bsum">${fmtEur(dt/R)} €</span></summary>`;
+    for(const s of stopsOf(i)){if(!katOf(s))continue;const on=counted(s,i),pr=priceOf(s);
+      h+=`<div class="brow ${on?"":"off"}"><input type="checkbox" data-bskip="${s.id}" data-bd="${i}" ${on?"checked":""} aria-label="${esc(s.name)} einrechnen">
+        <div class="bname"><span>${esc(s.name)}</span><span class="muted small">${katOf(s)==="Eintritt"?"Eintritt":"Essen & Trinken"}${s.preisInfo?" · "+esc(s.preisInfo):""}${!on&&alt[s.id]&&b.skip[s.id]==null?" · Alternative zu "+esc(alt[s.id]):""}</span></div>
+        <label class="bprice">¥<input inputmode="numeric" data-bprice="${s.id}" value="${pr?fmtYen(pr):"0"}" aria-label="Preis pro Person für ${esc(s.name)}"></label></div>`}
+    h+=`<div class="brow snack"><span></span><div class="bname">Frühstück & Snacks</div><span class="bprice">¥${fmtYen(b.daily)}</span></div>
+      <div class="bfoot">pro Person ¥${fmtYen(c.e+c.f+b.daily)} · × ${n} = ¥${fmtYen(dt)} ≈ ${fmtEur(dt/R)} €</div></details>`}
+  h+=`</div>`;
+  $("#fxBody").innerHTML=h;
+  $("#bDaily").addEventListener("change",e=>{b.daily=Math.max(0,parseNum(e.target.value));save();renderBudget()});
+  document.querySelectorAll("details.bday").forEach(el=>el.addEventListener("toggle",()=>{const i=+el.dataset.bday;el.open?openBDays.add(i):openBDays.delete(i)}));
+}
+document.addEventListener("click",e=>{
+  const v=e.target.closest("[data-fxview]");if(v){fxView=v.dataset.fxview;renderFx();return}
+  const pz=e.target.closest("[data-pers]");if(pz){const b=bset();b.persons=Math.max(1,Math.min(12,b.persons+ +pz.dataset.pers));save();renderBudget();return}
+  const gb=e.target.closest("[data-gobudget]");if(gb){const i=+gb.dataset.gobudget;fxView="budget";openBDays.add(i);goTab("fx");setTimeout(()=>document.querySelector(`details.bday[data-bday="${i}"]`)?.scrollIntoView({block:"start"}),60)}
+});
+document.addEventListener("change",e=>{
+  const id=e.target.dataset.bskip;if(id!==undefined){const b=bset(),i=+e.target.dataset.bd,def=!altMap(i)[id];
+    if(e.target.checked===def)delete b.skip[id];else b.skip[id]=!e.target.checked;save();renderBudget();return}
+  const pid=e.target.dataset.bprice;if(pid!==undefined){bset().ov[pid]=Math.max(0,parseNum(e.target.value));save();renderBudget()}
+});
+
 /* ---------- Yen-Umrechner ---------- */
 const FXKEY="jm-fx-v1";
 let FX={rate:185.75,date:"2026-08-27",src:"Richtwert",fee:0};
@@ -661,7 +745,10 @@ async function refreshFx(force){
 }
 function renderFx(){
   const d=FX.date?new Date(FX.date+"T12:00:00").toLocaleDateString("de-AT"):"";
-  let h=`<div class="topbar"><div><div class="eyebrow">Umrechner</div><h1>Yen ↔ Euro</h1></div></div>
+  $("#v-fx").innerHTML=`<div class="topbar"><div><div class="eyebrow">Geld</div><h1>${fxView==="budget"?"Reisebudget":"Yen ↔ Euro"}</h1></div></div>
+    <div class="seg seg2" role="group" aria-label="Ansicht"><button data-fxview="budget" aria-pressed="${fxView==="budget"}">Budget</button><button data-fxview="conv" aria-pressed="${fxView==="conv"}">Umrechner</button></div><div id="fxBody"></div>`;
+  if(fxView==="budget"){renderBudget();return}
+  let h=`
   <div class="fxcard">
     <div class="fxrow"><span class="cur">¥</span><label><span>Yen</span><input id="fxY" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Betrag in Yen"></label></div>
     <div class="fxrow"><span class="cur">€</span><label><span>Euro</span><input id="fxE" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Betrag in Euro"></label></div>
@@ -674,7 +761,7 @@ function renderFx(){
   <h2>Zum Merken</h2>
   <table class="fxt">${[[100,"Getränk am Automaten"],[1000,"Ramen, Konbini-Einkauf"],[3000,"Mittagsmenü, Museum"],[10000,"Gutes Abendessen"],[30000,"Omakase, Kaiseki"]].map(([y,t])=>`<tr><td><b>${fmtYen(y)} ¥</b> · ${t}</td><td>≈ ${fmtEur(y/effRate())} €</td></tr>`).join("")}</table>
   <p class="muted small">Faustregel: Yen durch ${Math.round(effRate()/10)*10} teilen, oder 1.000 ¥ ≈ ${fmtEur(1000/effRate())} €. Ohne Netz rechnet die App mit dem zuletzt geladenen Kurs.</p>`;
-  $("#v-fx").innerHTML=h;
+  $("#fxBody").innerHTML=h;
   const Y=$("#fxY"),E=$("#fxE");
   const fromY=()=>{const v=parseNum(Y.value);E.value=Y.value.trim()?fmtEur(v/effRate()):""};
   const fromE=()=>{const v=parseNum(E.value);Y.value=E.value.trim()?fmtYen(v*effRate()):""};
