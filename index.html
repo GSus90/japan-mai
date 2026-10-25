@@ -68,6 +68,7 @@ a.namelink{text-decoration:none;color:inherit;display:inline}
 a.namelink .pin{display:inline-block;width:14px;height:14px;margin-left:5px;vertical-align:-1px;color:var(--stamp)}
 a.thumblink{display:block}
 .src{font-size:.78rem;color:var(--muted)}
+.linkbtn.small{font-size:inherit;color:var(--muted)}
 .seg2{grid-template-columns:1fr 1fr;margin-bottom:16px}
 .pp{margin-left:6px;color:var(--muted);font-weight:600;letter-spacing:.02em;text-transform:none}
 .daybudget{margin:-6px 0 14px}
@@ -301,8 +302,23 @@ function stopsOf(i){
 }
 function srcOf(p){if(p.src)return p.src;const u=p.url||"";return /tiktok\./i.test(u)?"TikTok":/instagram\./i.test(u)?"Instagram":/youtu/i.test(u)?"YouTube":u?"Link":"Eigene Idee"}
 const SRC_ICON=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`;
-function srcLine(s){if(!s.quelle)return"";const url=s.quelleUrl||s.tiktok;
-  return `<div class="src">Quelle: ${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(s.quelle)} ansehen ${SRC_ICON}</a>`:`<span>${esc(s.quelle)}${s.quelle==="TikTok"?" (Link nicht gespeichert)":""}</span>`}</div>`}
+/* TikTok-Links: Video-ID herausziehen und direkt in der TikTok-App öffnen.
+   Kurzlinks (vm.tiktok.com) landen aus der Home-Bildschirm-App sonst auf TikToks Webseite mit Login-Popup. */
+function ttDecode(u){let t=String(u||"");for(let k=0;k<4;k++){try{const d=decodeURIComponent(t);if(d===t)break;t=d}catch(e){break}}return t}
+function ttId(u){const t=ttDecode(u);const m=t.match(/(?:\/video\/|\/v\/|aweme\/detail\/|[?&](?:share_item_id|item_id|click_item_id|page_id)=)(\d{15,21})/);return m?m[1]:""}
+function ttUser(u){const m=ttDecode(u).match(/tiktok\.com\/@([\w.\-]+)\/video\//);return m?m[1]:""}
+function ttClean(u){const id=ttId(u);if(!id)return u;const us=ttUser(u);return `https://www.tiktok.com/@${us||"_"}/video/${id}`}
+function srcLine(s){if(!s.quelle)return"";
+  const key=s.id||"",url=(S.linkfix&&S.linkfix[key])||s.quelleUrl||s.tiktok;
+  if(!url)return `<div class="src">Quelle: <span>${esc(s.quelle)}${s.quelle==="TikTok"?" (Link nicht gespeichert)":""}</span></div>`;
+  const isTT=/tiktok\.com|onelink\.me|snssdk/i.test(url),id=isTT?ttId(url):"";
+  if(isTT&&id)return `<div class="src">Quelle: <a href="snssdk1233://aweme/detail/${id}">In TikTok öffnen ${SRC_ICON}</a> · <a href="${esc(ttClean(url))}" target="_blank" rel="noopener">im Browser</a></div>`;
+  return `<div class="src">Quelle: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(s.quelle)} ansehen ${SRC_ICON}</a>${isTT&&key?` · <button class="linkbtn small" data-fixlink="${esc(key)}">Öffnet nicht?</button>`:""}</div>`}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-fixlink]");if(!b)return;
+  const v=prompt("Öffne das Video einmal im Browser, kopiere dort die komplette Adresse oben aus der Adresszeile und füge sie hier ein. Die App merkt sich daraus das Video und öffnet es künftig direkt in TikTok.");
+  if(!v)return;const id=ttId(v);if(!id){toast("In dieser Adresse steckt keine Video-Nummer.");return}
+  S.linkfix=S.linkfix||{};S.linkfix[b.dataset.fixlink]=ttClean(v);save();toast("Gespeichert – öffnet jetzt in TikTok");
+  if(tab==="wish")renderWish();else if(!$("#v-day").hidden)renderDay();else goTab(tab)});
 const closedOn=(s,i)=>s.ruhetage&&s.ruhetage.includes(WD[dateOf(i).getDay()]);
 function todayIndex(){const t=new Date();t.setHours(12,0,0,0);const d0=new Date(S.start+"T12:00:00");const n=Math.round((t-d0)/864e5);return n>=0&&n<14?n:-1}
 function bookState(id){return S.book[id]||{status:"offen",number:"",imgs:[]}}
@@ -343,8 +359,8 @@ let searchQ="",searchKind="Alle";
 const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 function allPlaces(){
   const out=[];
-  TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.typ==="Fahrt")return;out.push({name:s.name,info:s.info,typ:s.typ,stadt:D.stadt,day:i,zeit:s.zeit,maps:s.maps,photo:s.photo,ownImg:s.ownImg,tiktok:s.tiktok,quelle:s.quelle,quelleUrl:s.quelleUrl})}));
-  S.places.filter(p=>p.day==null).forEach(p=>out.push({name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,quelle:srcOf(p),quelleUrl:p.url||null}));
+  TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.typ==="Fahrt")return;out.push({id:s.id,name:s.name,info:s.info,typ:s.typ,stadt:D.stadt,day:i,zeit:s.zeit,maps:s.maps,photo:s.photo,ownImg:s.ownImg,tiktok:s.tiktok,quelle:s.quelle,quelleUrl:s.quelleUrl})}));
+  S.places.filter(p=>p.day==null).forEach(p=>out.push({id:"p-"+p.id,name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,quelle:srcOf(p),quelleUrl:p.url||null}));
   return out;
 }
 function hl(text,terms){let t=esc(text);terms.forEach(w=>{if(!w)return;const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");t=t.replace(re,"<mark>$1</mark>")});return t}
@@ -459,7 +475,7 @@ function renderWish(){
   </div>`;
   const card=p=>`<div class="item"><div class="head"><div><b>${esc(p.name)}</b><span class="muted small">${esc([p.kind,p.city,p.info].filter(Boolean).join(" · "))}</span></div>${p.img?`<figure style="margin:0;width:56px;flex:0 0 auto"><img data-img="${p.img}" data-view alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px"></figure>`:""}</div>
     <div class="actions"><a class="chip" href="${mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a><button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
-    ${srcLine({quelle:srcOf(p),quelleUrl:p.url})}
+    ${srcLine({id:"p-"+p.id,quelle:srcOf(p),quelleUrl:p.url})}
     <label class="field"><span>Tag</span><select data-plday="${p.id}">${dayOpts(p.day)}</select></label></div>`;
   h+=`<h2>Ohne Tag (${ideas.length})</h2><div class="list">${ideas.length?ideas.map(card).join(""):'<p class="muted">Noch nichts gemerkt.</p>'}</div>`;
   if(planned.length)h+=`<h2>Schon eingeplant (${planned.length})</h2><div class="list">${planned.map(card).join("")}</div>`;
@@ -479,7 +495,7 @@ async function fromLink(){
   let text="";
   try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),9000);
     const r=await fetch("https://www.tiktok.com/oembed?url="+encodeURIComponent(link),{signal:ctl.signal});clearTimeout(to);
-    if(r.ok){const j=await r.json();text=[j.title,j.author_name?"@"+j.author_name:""].filter(Boolean).join("\n")}}catch(e){}
+    if(r.ok){const j=await r.json();const vid=j.embed_product_id||((j.html||"").match(/data-video-id="(\d+)"/)||[])[1];if(vid&&!ttId(link))link=`https://www.tiktok.com/@${j.author_unique_id||ttUser(link)||"_"}/video/${vid}`;text=[j.title,j.author_name?"@"+j.author_name:""].filter(Boolean).join("\n")}}catch(e){}
   if(!text||!Rec.fromText(text).name){
     draft={...(draft||{}),link};
     tkStatus("TikTok gibt die Beschreibung hier nicht heraus. Wähle einen Screenshot vom Video, dann liest die App den Text daraus. Der Link bleibt gespeichert.",true);
@@ -563,6 +579,7 @@ async function renderDraft(){
 }
 async function savePlace(day,time){
   const r=draft.rec;if(!r.name)return;
+  if(draft.link&&ttId(draft.link))draft.link=ttClean(draft.link);
   const p={id:Date.now().toString(36),src:draft.link?"":(draft.manual?"Eigene Idee":"TikTok"),url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
     q:[r.name,r.area,r.city].filter(Boolean).join(" "),closed:r.closed||[]};
   {const m=String(r.budget||"").match(/(\d[\d.,]*)/);if(m){const v=parseNum(m[1]);if(v>=100&&v<200000)p.price=v}}
