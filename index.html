@@ -269,7 +269,7 @@ const mapUrl=q=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComp
 
 /* ---------- Speicher ---------- */
 const KEY="jm-state-v1";
-let S={start:TRIP[0].datum,done:{},book:{},notes:{},journal:{},places:[]};
+let S={start:"2027-04-02",done:{},book:{},notes:{},journal:{},places:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S={...S,...s}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Speichern fehlgeschlagen. Speicher voll?")}}
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -335,7 +335,7 @@ document.querySelector("nav.tabbar").addEventListener("click",e=>{const b=e.targ
 const isStandalone=()=>window.navigator.standalone===true||matchMedia("(display-mode: standalone)").matches;
 function renderTrip(){
   const ti=todayIndex();
-  let h=`<div class="topbar"><div><div class="eyebrow">${fmt(dateOf(0))} – ${fmt(dateOf(13))} · 14 Tage</div><h1>Japan im Mai</h1></div></div>`;
+  let h=`<div class="topbar"><div><div class="eyebrow">${fmt(dateOf(0))} – ${fmt(dateOf(13))} · 14 Tage</div><h1>Japan im ${dateOf(0).toLocaleDateString("de-AT",{month:"long"})}</h1></div></div>`;
   if(!isStandalone())h+=`<div class="install"><b>Als App installieren:</b> In Safari unten auf <b>Teilen</b> tippen, dann <b>Zum Home-Bildschirm</b>. Danach startet Japan Mai wie eine App und funktioniert auch ohne Netz.</div>`;
   h+=`<div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Restaurant oder Ort suchen" value="${esc(searchQ)}" aria-label="Orte durchsuchen"><button class="clear" id="qClear" aria-label="Suche leeren" ${searchQ?"":"hidden"}>×</button></div>
@@ -621,14 +621,16 @@ function renderMore(){
   <details><summary>JR Pass oder Einzeltickets?</summary><ul><li>Für diese Route sind Einzeltickets meist günstiger als der landesweite JR Pass. Vorher mit dem JR-Pass-Rechner prüfen.</li><li>Regionale Pässe können sich für Tag 7–14 lohnen.</li></ul></details>
   <details><summary>Gepäck vorausschicken</summary><ul><li>Takkyubin an der Hotelrezeption, ca. 2.000–3.000 Yen, Ankunft am Folgetag.</li><li>Sinnvoll Tokyo→Kyoto und Osaka→Hiroshima, damit Naoshima mit Tagesrucksack geht.</li></ul></details>
   <details><summary>Geld, Einreise, Strom</summary><ul><li>Visit Japan Web vorab ausfüllen.</li><li>7-Eleven- und Japan-Post-Automaten nehmen ausländische Karten. Etwas Bargeld für kleine Lokale.</li><li>Kein Trinkgeld. Steckdosen Typ A, 100 V.</li></ul></details>
-  <details><summary>Golden Week</summary><p>Ca. 29. April bis 6. Mai ist halb Japan unterwegs. Mitte bis Ende Mai ist ruhiger und angenehm warm.</p></details>
+  <details><summary>Kirschblüte Anfang April</summary><ul><li>Anfang April ist in Tokyo, Kyoto und Osaka oft Hochsaison der Kirschblüte: wunderschön, aber sehr voll. Beliebte Orte wie Philosophenweg, Burg von Osaka oder Kamo-Fluss früh am Morgen besuchen.</li><li>Hotels und Restaurants so früh wie möglich buchen, Preise sind höher.</li><li>Abends wird es noch kühl (ca. 8–12 °C): eine Jacke mitnehmen.</li><li>Die Golden Week (29. April – 5. Mai) liegt nach eurer Reise.</li></ul></details>
   <h2>Sicherung</h2>
   <div class="card"><p class="muted small" style="margin:0">Alles liegt nur auf diesem iPhone. Vor dem Abflug eine Sicherung in „Dateien“ ablegen.</p>
   <div class="btnrow"><button class="btn primary" id="exportBtn">Sicherung speichern</button><label class="btn" style="position:relative;overflow:hidden">Sicherung laden<input type="file" accept="application/json,.json" id="importIn" style="position:absolute;inset:0;opacity:0"></label></div><div class="status" id="bkStatus"></div></div>
+  <h2>App-Version</h2><div class="card"><p class="muted small" style="margin:0">Version ${APPV}. Wenn eine Änderung nicht ankommt: hier tippen. Deine Einträge bleiben erhalten.</p><button class="btn" id="hardUpdate">App neu laden</button></div>
   <h2>Bildnachweise</h2><details><summary>${CREDITS.length} Fotos von Wikimedia Commons</summary><ul>${CREDITS.map(c=>`<li class="credit">${esc(c.title)}: ${esc(c.author)}, ${esc(c.license)} · <a href="${esc(c.source)}" target="_blank" rel="noopener">Quelle</a></li>`).join("")}</ul><p>Ortsbilder zeigen die Umgebung, nicht zwingend das genannte Restaurant.</p></details>`;
   $("#v-more").innerHTML=h;
   $("#startIn").onchange=e=>{if(e.target.value){S.start=e.target.value;save();toast("Datum geändert")}};
   $("#exportBtn").onclick=exportBackup;
+  $("#hardUpdate").onclick=async()=>{try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));const rs=await navigator.serviceWorker?.getRegistrations?.();if(rs)await Promise.all(rs.map(r=>r.unregister()))}catch(e){}location.reload()};
   $("#importIn").onchange=e=>e.target.files[0]&&importBackup(e.target.files[0]);
 }
 const b64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
@@ -807,6 +809,7 @@ function renderFx(){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-yen]");if(!b)return;const Y=$("#fxY");Y.value=fmtYen(+b.dataset.yen);Y.dispatchEvent(new Event("input"));FX.lastY=+b.dataset.yen;saveFx()});
 refreshFx(false).then(ok=>{if(ok&&tab==="fx")renderFx()});
 
+const APPV="13 vom 27.10.2026";
 /* ---------- Start ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2000)}
 goTab("trip");
