@@ -98,11 +98,19 @@
 
   // Screenshot einer Google-Maps-Ortsseite: Name über der Bewertung, darunter Kategorie/Preis, weiter unten die Adresse
   const MAPS_UI = /\b(route|directions|anrufen|call|speichern|save|[uü]bersicht|overview|rezensionen|reviews|speisekarte|fotos|photos|teilen|share|starten|start)\b/gi;
-  function fromMaps(raw) {
+  // Wirkt der Name wie Buchstabensalat aus der Texterkennung? (zu viele Ein-/Zwei-Zeichen-Brocken)
+  function plausible(n) {
+    const t = String(n || '').split(/\s+/).filter(Boolean); if (!t.length) return false;
+    const good = t.filter(w => /[A-Za-z]{3,}|[\u3040-\u30ff\u4e00-\u9faf]{2,}|^&$/.test(w)).length;
+    return good / t.length >= 0.6 && !/[©®™]/.test(n);
+  }
+  function fromMaps(raw, opts) {
+    opts = opts || {};
     const lines = String(raw || '').replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
     const ui = (String(raw).match(MAPS_UI) || []).length;
-    const ri = lines.findIndex(l => /^\s*[1-5][,.]\d\b/.test(l) && /\(\s*\d|\d\s*\)|★|\*/.test(l));
-    if (ri < 1 || ui < 2) return null;
+    let ri = lines.findIndex(l => /(^|\s)[1-5][,.]\d(\s|$)/.test(l.slice(0, 12)) && /\(\s*[\d.,]+|[\d.,]+\s*\)|★|\*/.test(l));
+    if (!opts.maps && (ri < 1 || ui < 2)) return null;
+    if (ri < 0 && opts.title) ri = lines.findIndex(l => clean(l) && opts.title.includes(clean(l).split(' ')[0])) + String(opts.title).split('\n').length;
     const tidy = l => { const t = l.split(/\s+/); while (t.length > 1 && (t[t.length - 1].length <= 2 && t[t.length - 1] !== '&' || /[^A-Za-z0-9&'’.\-:぀-ヿ一-龯]/.test(t[t.length - 1].replace(/[,]$/, '')))) t.pop(); return t.join(' '); };
     const nameLines = [];
     for (let j = ri - 1; j >= 0 && nameLines.length < 3; j--) {
@@ -110,8 +118,10 @@
       if (isNoise(l) || MAPS_UI.test(l) || /bewertet|rated|hotel\b.*\b(am besten|top)/i.test(l)) { MAPS_UI.lastIndex = 0; break; }
       MAPS_UI.lastIndex = 0; nameLines.unshift(l);
     }
-    const name = clean(nameLines.join(' ').replace(/\s+&\s*$/, ''));
-    if (!name) return null;
+    let name = clean(nameLines.join(' ').replace(/\s+&\s*$/, ''));
+    if (opts.title && plausible(clean(opts.title.replace(/\n/g, ' ')))) name = clean(opts.title.replace(/\n/g, ' ').replace(/\s+&\s*$/, ''));
+    if (!plausible(name)) name = '';
+    if (!name && !opts.maps) return null;
     const cat = clean((lines[ri + 1] || '').replace(/[-·•]\s*&?\s*$/, ''));
     let addr = '';
     for (let j = ri + 1; j < lines.length; j++) {
@@ -134,11 +144,11 @@
     if (pm) { const a = num(pm[1]), b = num(pm[2]); if (a >= 100 && b >= a) budget = String(Math.round((a + b) / 2 / 100) * 100); }
     const areaKey = hits.find(k => PREF[k]) || null;
     return { name, area: addr, city: best ? best[0] : '', kind, info: [cat.replace(/\s+[-·•]\s+/g, ' · '), addr].filter(Boolean).join(' · ').slice(0, 220),
-      hours: '', budget, closed: [], res: '', sure: true, areaKey, src: 'Google Maps', query: [name, addr].filter(Boolean).join(' ') };
+      hours: '', budget, closed: [], res: '', sure: !!name, areaKey, src: 'Google Maps', query: [name, addr].filter(Boolean).join(' ') };
   }
 
-  function fromText(raw) {
-    const mp = fromMaps(raw); if (mp) return mp;
+  function fromText(raw, opts) {
+    const mp = fromMaps(raw, opts); if (mp) return mp;
     const text = normalizeText(raw);
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     const out = { name: '', area: '', city: '', kind: 'Essen', info: '', hours: '', budget: '', closed: [], res: '', sure: false };
@@ -176,6 +186,7 @@
       if (cand) { const r = splitNameArea(cand); out.name = r.name; out.area = out.area || r.area; }
     }
     out.name = out.name.replace(/^(post\s*\d+\s*)/i, '').replace(/\s+(in|at|near|@|bei|im)$/i, '').replace(/^(?:[A-Za-z]{1,2}[^A-Za-z\s]*\s+){2,}(?=[A-Za-z]{3,})/, '').replace(/\s*[|·]\s*$/, '').trim();
+    if (!plausible(out.name)) { out.name = ''; out.sure = false; }
 
     // 3) Stadt: Ortsblock zählt fünffach, Text doppelt, Hashtags einfach
     const score = {}, hits = [];
@@ -233,5 +244,5 @@
     return { day: d, time: dinner ? '19:00' : '12:30', why: `In ${rec.city} ist jedes Essen schon verplant – als Alternative an ${dayLabel(d)}.` };
   }
 
-  root.Rec = { fromText, suggest, AREAS };
+  root.Rec = { fromText, suggest, AREAS, plausible };
 })(typeof window !== 'undefined' ? window : globalThis);
