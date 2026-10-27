@@ -296,7 +296,7 @@ const fmt=d=>d.getDate()+"."+(d.getMonth()+1)+".";
 const fmtLong=d=>d.toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long"});
 function stopsOf(i){
   const base=TRIP[i].stops.map(s=>({...s,own:false}));
-  const own=S.places.filter(p=>p.day===i).map(p=>({id:"p-"+p.id,zeit:p.time||"12:00",typ:p.kind||"Essen",name:p.name,info:p.info,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),tiktok:p.url||null,
+  const own=S.places.filter(p=>p.day===i).map(p=>({id:"p-"+p.id,zeit:p.time||"12:00",typ:p.kind||"Essen",name:p.name,info:p.info,maps:p.mapsUrl||mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),tiktok:p.url||null,
     reservierung:p.res?{art:p.res}:null,ruhetage:p.closed||[],photo:null,ownImg:p.img||null,own:true,pid:p.id,quelle:srcOf(p),quelleUrl:p.url||null,preis:p.price!=null?p.price:null}));
   return [...base,...own].sort((a,b)=>a.zeit.localeCompare(b.zeit));
 }
@@ -360,7 +360,7 @@ const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u03
 function allPlaces(){
   const out=[];
   TRIP.forEach((D,i)=>stopsOf(i).forEach(s=>{if(s.typ==="Fahrt")return;out.push({id:s.id,name:s.name,info:s.info,typ:s.typ,stadt:D.stadt,day:i,zeit:s.zeit,maps:s.maps,photo:s.photo,ownImg:s.ownImg,tiktok:s.tiktok,quelle:s.quelle,quelleUrl:s.quelleUrl})}));
-  S.places.filter(p=>p.day==null).forEach(p=>out.push({id:"p-"+p.id,name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,quelle:srcOf(p),quelleUrl:p.url||null}));
+  S.places.filter(p=>p.day==null).forEach(p=>out.push({id:"p-"+p.id,name:p.name,info:p.info,typ:p.kind||"Essen",stadt:p.city||"",day:null,maps:p.mapsUrl||mapUrl(p.q||[p.name,p.city].filter(Boolean).join(" ")),ownImg:p.img||null,quelle:srcOf(p),quelleUrl:p.url||null}));
   return out;
 }
 function hl(text,terms){let t=esc(text);terms.forEach(w=>{if(!w)return;const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");t=t.replace(re,"<mark>$1</mark>")});return t}
@@ -463,18 +463,18 @@ function renderWish(){
   const ideas=S.places.filter(p=>p.day==null),planned=S.places.filter(p=>p.day!=null);
   let h=`<div class="topbar"><div><div class="eyebrow">Aus TikTok & Co.</div><h1>Merkliste</h1></div></div>
   <div class="card" id="addCard">
-    <div><h3 class="addtitle">Ort aus TikTok hinzufügen</h3>
-    <p class="muted small" style="margin:4px 0 0">In TikTok auf <b>Teilen → Link kopieren</b>, dann hier tippen. Die App erkennt das Lokal und schlägt einen Tag vor.</p></div>
-    <label class="field"><span>Link</span><input id="tkLink" type="url" inputmode="url" placeholder="https://vm.tiktok.com/…" value="${esc(draft?.link||"")}"></label>
+    <div><h3 class="addtitle">Ort aus TikTok oder Google Maps hinzufügen</h3>
+    <p class="muted small" style="margin:4px 0 0">In TikTok auf <b>Teilen → Link kopieren</b>, dann hier tippen. Oder einen Screenshot wählen: vom TikTok-Video oder von einem Ort in Google Maps. Die App erkennt das Lokal und schlägt einen Tag vor.</p></div>
+    <label class="field"><span>Link</span><input id="tkLink" type="url" inputmode="url" placeholder="TikTok- oder Google-Maps-Link" value="${esc(draft?.link||"")}"></label>
     <button class="btn primary" id="tkGo">Link einfügen & erkennen</button>
-    <label class="btn filebtn" id="tkShotBtn">Oder Screenshot vom Video wählen<input type="file" accept="image/*" id="tkShot"></label>
-    <p class="muted small" style="margin:0">Beim Screenshot vorher in TikTok auf „mehr“ tippen, damit die ganze Beschreibung zu sehen ist.</p>
+    <label class="btn filebtn" id="tkShotBtn">Screenshot wählen (TikTok oder Google Maps)<input type="file" accept="image/*" id="tkShot"></label>
+    <p class="muted small" style="margin:0">TikTok: vorher auf „mehr“ tippen, damit die ganze Beschreibung zu sehen ist. Google Maps: Ort antippen, sodass Name, Bewertung und Adresse zu sehen sind.</p>
     <div class="status" id="tkStatus" aria-live="polite"></div>
     <div id="tkResult"></div>
     ${draft?"":`<button class="linkbtn" id="tkManual">Ohne Video selbst eintragen</button>`}
   </div>`;
   const card=p=>`<div class="item"><div class="head"><div><b>${esc(p.name)}</b><span class="muted small">${esc([p.kind,p.city,p.info].filter(Boolean).join(" · "))}</span></div>${p.img?`<figure style="margin:0;width:56px;flex:0 0 auto"><img data-img="${p.img}" data-view alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px"></figure>`:""}</div>
-    <div class="actions"><a class="chip" href="${mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a><button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
+    <div class="actions"><a class="chip" href="${p.mapsUrl||mapUrl(p.q||p.name+" "+(p.city||""))}" target="_blank" rel="noopener">Karte</a><button class="chip" data-delplace="${p.id}">${armed===p.id?"Wirklich löschen?":"Löschen"}</button></div>
     ${srcLine({id:"p-"+p.id,quelle:srcOf(p),quelleUrl:p.url})}
     <label class="field"><span>Tag</span><select data-plday="${p.id}">${dayOpts(p.day)}</select></label></div>`;
   h+=`<h2>Ohne Tag (${ideas.length})</h2><div class="list">${ideas.length?ideas.map(card).join(""):'<p class="muted">Noch nichts gemerkt.</p>'}</div>`;
@@ -491,6 +491,10 @@ async function fromLink(){
   if(!/^https?:\/\//.test(link)){try{const t=(await navigator.clipboard.readText()).trim();const m=t.match(/https?:\/\/\S+/);if(m)link=m[0]}catch(e){}}
   if(!/^https?:\/\//.test(link)){tkStatus("Kein Link gefunden. Lange ins Feld „Link“ tippen und „Einsetzen“ wählen.",true);$("#tkLink").focus();return}
   $("#tkLink").value=link;
+  if(/maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps|maps\.google\./i.test(link)){
+    draft={...(draft||{}),mapsLink:link,link:""};$("#tkLink").value="";
+    tkStatus("Google-Maps-Link gespeichert. Wähle jetzt noch einen Screenshot vom Ort in Google Maps, dann liest die App Name und Adresse.",true);
+    $("#tkShotBtn").classList.add("pulse");return}
   tkStatus("Hole die Beschreibung von TikTok …");
   let text="";
   try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),9000);
@@ -519,7 +523,9 @@ async function fromShot(file){
   try{await new Promise((r,j)=>{im.onload=r;im.onerror=j;im.src=url})}catch(e){tkStatus("Das Bild konnte nicht geöffnet werden.",true);return}
   let text="",fallback="";
   try{
-    for(const [mode,crop] of [["white",true],["light",true],["white",false],["dark",false]]){
+    const bright=(()=>{const c=document.createElement("canvas");c.width=40;c.height=80;const g=c.getContext("2d");g.drawImage(im,0,0,40,80);const a=g.getImageData(0,0,40,80).data;let t=0;for(let k=0;k<a.length;k+=4)t+=.299*a[k]+.587*a[k+1]+.114*a[k+2];return t/(a.length/4)})();
+    const order=bright>150?[["dark",false],["white",true],["light",true]]:[["white",true],["light",true],["white",false],["dark",false]];
+    for(const [mode,crop] of order){
       const out=await T.recognize(prepCanvas(im,mode,crop),"eng");const t=out.data.text||"";const r=Rec.fromText(t);
       if(r.name&&r.city&&r.sure){text=t;break}
       if(!fallback&&r.name&&r.city)fallback=t;
@@ -534,7 +540,7 @@ function dayLabel(i){return `Tag ${i+1} (${WD[dateOf(i).getDay()]} ${fmt(dateOf(
 function process(text,link,img){
   const rec=Rec.fromText(text);
   const sug=Rec.suggest(rec,stopsOf,dayLabel,i=>WD[dateOf(i).getDay()]);
-  draft={link,img,rec,sug,text};
+  draft={link,img,rec,sug,text,mapsLink:draft?.mapsLink||""};
   const dupe=findDupe(rec.name);
   renderWish();
   setTimeout(()=>$("#tkResult")?.scrollIntoView({behavior:"smooth",block:"start"}),50);
@@ -580,8 +586,8 @@ async function renderDraft(){
 async function savePlace(day,time){
   const r=draft.rec;if(!r.name)return;
   if(draft.link&&ttId(draft.link))draft.link=ttClean(draft.link);
-  const p={id:Date.now().toString(36),src:draft.link?"":(draft.manual?"Eigene Idee":"TikTok"),url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
-    q:[r.name,r.area,r.city].filter(Boolean).join(" "),closed:r.closed||[]};
+  const p={id:Date.now().toString(36),src:draft.link?"":(draft.manual?"Eigene Idee":(r.src||(draft.mapsLink?"Google Maps":"TikTok"))),mapsUrl:draft.mapsLink||"",url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
+    q:r.query||[r.name,r.area,r.city].filter(Boolean).join(" "),closed:r.closed||[]};
   {const m=String(r.budget||"").match(/(\d[\d.,]*)/);if(m){const v=parseNum(m[1]);if(v>=100&&v<200000)p.price=v}}
   if(draft.img)p.img=await imgPut(draft.img);
   S.places.push(p);save();draft=null;renderWish();

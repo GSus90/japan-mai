@@ -96,7 +96,49 @@
     return '';
   }
 
+  // Screenshot einer Google-Maps-Ortsseite: Name über der Bewertung, darunter Kategorie/Preis, weiter unten die Adresse
+  const MAPS_UI = /\b(route|directions|anrufen|call|speichern|save|[uü]bersicht|overview|rezensionen|reviews|speisekarte|fotos|photos|teilen|share|starten|start)\b/gi;
+  function fromMaps(raw) {
+    const lines = String(raw || '').replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+    const ui = (String(raw).match(MAPS_UI) || []).length;
+    const ri = lines.findIndex(l => /^\s*[1-5][,.]\d\b/.test(l) && /\(\s*\d|\d\s*\)|★|\*/.test(l));
+    if (ri < 1 || ui < 2) return null;
+    const tidy = l => { const t = l.split(/\s+/); while (t.length > 1 && (t[t.length - 1].length <= 2 && t[t.length - 1] !== '&' || /[^A-Za-z0-9&'’.\-:぀-ヿ一-龯]/.test(t[t.length - 1].replace(/[,]$/, '')))) t.pop(); return t.join(' '); };
+    const nameLines = [];
+    for (let j = ri - 1; j >= 0 && nameLines.length < 3; j--) {
+      const l = tidy(lines[j]);
+      if (isNoise(l) || MAPS_UI.test(l) || /bewertet|rated|hotel\b.*\b(am besten|top)/i.test(l)) { MAPS_UI.lastIndex = 0; break; }
+      MAPS_UI.lastIndex = 0; nameLines.unshift(l);
+    }
+    const name = clean(nameLines.join(' ').replace(/\s+&\s*$/, ''));
+    if (!name) return null;
+    const cat = clean((lines[ri + 1] || '').replace(/[-·•]\s*&?\s*$/, ''));
+    let addr = '';
+    for (let j = ri + 1; j < lines.length; j++) {
+      if (/chome|japan|japon|〒|\b\d{3}-\d{4}\b|-ku\b|\bcity\b|\bward\b|\bprefecture\b/i.test(lines[j])) {
+        addr = clean(lines[j].replace(/^[^A-Za-z0-9]+/, ''));
+        if (lines[j + 1] && /^\d{3}-\d{4}|japan/i.test(lines[j + 1]) && !/japan/i.test(addr)) addr += ', ' + clean(lines[j + 1]);
+        break;
+      }
+    }
+    const score = {}, hits = [];
+    cityScan(addr, 5, score, hits); cityScan(name + ' ' + cat, 1, score, hits);
+    const best = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+    const low = (cat + ' ' + name).toLowerCase();
+    let kind = 'Essen';
+    if (/tempel|temple|schrein|shrine|museum|park\b|garten|garden|aussicht|viewpoint|observ|sehensw|attraction|burg\b|castle|turm|tower|galerie|gallery|onsen|jinja|\bji\b/.test(low) && !/caf[eé]|restaurant|ramen|sushi|bäckerei|bakery|bar\b/.test(low)) kind = 'Sehen';
+    else if (/\bbar\b|cocktail|kneipe|pub\b|whisk|lounge bar|sake bar/.test(low) && !/restaurant|caf[eé]/.test(low)) kind = 'Abend';
+    const pm = cat.replace(/\s/g, '').match(/[¥￥]?(\d[\d.,]*)[-–~](\d[\d.,]*)/);
+    const num = t => parseFloat(String(t).replace(/[.,](?=\d{3}\b)/g, '').replace(',', '.')) || 0;
+    let budget = '';
+    if (pm) { const a = num(pm[1]), b = num(pm[2]); if (a >= 100 && b >= a) budget = String(Math.round((a + b) / 2 / 100) * 100); }
+    const areaKey = hits.find(k => PREF[k]) || null;
+    return { name, area: addr, city: best ? best[0] : '', kind, info: [cat.replace(/\s+[-·•]\s+/g, ' · '), addr].filter(Boolean).join(' · ').slice(0, 220),
+      hours: '', budget, closed: [], res: '', sure: true, areaKey, src: 'Google Maps', query: [name, addr].filter(Boolean).join(' ') };
+  }
+
   function fromText(raw) {
+    const mp = fromMaps(raw); if (mp) return mp;
     const text = normalizeText(raw);
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     const out = { name: '', area: '', city: '', kind: 'Essen', info: '', hours: '', budget: '', closed: [], res: '', sure: false };
