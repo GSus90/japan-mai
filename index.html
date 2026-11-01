@@ -464,8 +464,8 @@ function renderWish(){
   let h=`<div class="topbar"><div><div class="eyebrow">Aus TikTok & Co.</div><h1>Merkliste</h1></div></div>
   <div class="card" id="addCard">
     <div><h3 class="addtitle">Ort aus TikTok oder Google Maps hinzufügen</h3>
-    <p class="muted small" style="margin:4px 0 0">In TikTok auf <b>Teilen → Link kopieren</b>, dann hier tippen. Oder einen Screenshot wählen: vom TikTok-Video oder von einem Ort in Google Maps. Die App erkennt das Lokal und schlägt einen Tag vor.</p></div>
-    <label class="field"><span>Link</span><input id="tkLink" type="url" inputmode="url" placeholder="TikTok- oder Google-Maps-Link" value="${esc(draft?.link||"")}"></label>
+    <p class="muted small" style="margin:4px 0 0"><b>TikTok:</b> Teilen → Link kopieren. <b>Google Maps:</b> beim Ort auf Teilen → <b>Kopieren</b>. Dann hier auf den Knopf tippen. Die App erkennt das Lokal und schlägt einen Tag vor.</p></div>
+    <label class="field"><span>Link</span><input id="tkLink" type="text" inputmode="url" autocapitalize="off" autocorrect="off" placeholder="TikTok- oder Google-Maps-Link" value="${esc(draft?.link||"")}"></label>
     <button class="btn primary" id="tkGo">Link einfügen & erkennen</button>
     <label class="btn filebtn" id="tkShotBtn">Screenshot wählen (TikTok oder Google Maps)<input type="file" accept="image/*" id="tkShot"></label>
     <p class="muted small" style="margin:0">TikTok: vorher auf „mehr“ tippen, damit die ganze Beschreibung zu sehen ist. Google Maps: Ort antippen, sodass Name, Bewertung und Adresse zu sehen sind.</p>
@@ -482,18 +482,23 @@ function renderWish(){
   const v=$("#v-wish");v.innerHTML=h;hydrate(v);
   renderDraft();
   $("#tkGo").onclick=fromLink;
+  // Beim Einfügen Zeilenumbrüche behalten (Name / Adresse / Link), sonst kleben sie zusammen
+  $("#tkLink").addEventListener("paste",e=>{const t=e.clipboardData?.getData("text");if(t&&/\n/.test(t.trim())){e.preventDefault();e.target.value=t.trim().split(/\n+/).map(x=>x.trim()).filter(Boolean).join(" · ")}});
   $("#tkShot").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)fromShot(f)};
   $("#tkManual")?.addEventListener("click",()=>{draft={link:"",img:null,rec:{name:"",city:"",area:"",kind:"Essen",info:"",res:"",closed:[],sure:true},sug:{day:null,time:"19:00",why:""},manual:true};renderWish();$("#dName")?.focus()});
 }
 function tkStatus(msg,err){const el=$("#tkStatus");if(el){el.textContent=msg||"";el.className="status"+(err?" err":"")}}
 async function fromLink(){
-  let link=$("#tkLink").value.trim();
-  if(!/^https?:\/\//.test(link)){try{const t=(await navigator.clipboard.readText()).trim();const m=t.match(/https?:\/\/\S+/);if(m)link=m[0]}catch(e){}}
+  let raw=$("#tkLink").value.trim(),link=(raw.match(/https?:\/\/\S+/)||[""])[0];
+  if(!link){try{const t=(await navigator.clipboard.readText()).trim();const m=t.match(/https?:\/\/\S+/);if(m){link=m[0];raw=t}}catch(e){}}
+  // Google Maps „Teilen → Kopieren“ liefert Name + Adresse + Link: das ist zuverlässiger als jede Texterkennung
+  if(/maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps|maps\.google\./i.test(link)){const sh=Rec.fromShare(raw);
+    if(sh){draft={mapsLink:link};$("#tkLink").value="";process(raw,"",null,{rec:sh});return}}
   if(!/^https?:\/\//.test(link)){tkStatus("Kein Link gefunden. Lange ins Feld „Link“ tippen und „Einsetzen“ wählen.",true);$("#tkLink").focus();return}
   $("#tkLink").value=link;
   if(/maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps|maps\.google\./i.test(link)){
     draft={...(draft||{}),mapsLink:link,link:""};$("#tkLink").value="";
-    tkStatus("Google-Maps-Link gespeichert. Wähle jetzt noch einen Screenshot vom Ort in Google Maps, dann liest die App Name und Adresse.",true);
+    tkStatus("Im Link steht kein Name. In Google Maps beim Ort auf „Teilen“ und dann auf „Kopieren“ tippen (nicht „Link kopieren“) – dann kommt der Name mit. Oder jetzt einen Screenshot wählen.",true);
     $("#tkShotBtn").classList.add("pulse");return}
   tkStatus("Hole die Beschreibung von TikTok …");
   let text="";
@@ -548,7 +553,7 @@ async function fromShot(file){
 }
 function dayLabel(i){return `Tag ${i+1} (${WD[dateOf(i).getDay()]} ${fmt(dateOf(i))})`}
 function process(text,link,img,opts){
-  const rec=Rec.fromText(text,opts||undefined);
+  const rec=opts&&opts.rec?opts.rec:Rec.fromText(text,opts||undefined);
   const sug=Rec.suggest(rec,stopsOf,dayLabel,i=>WD[dateOf(i).getDay()]);
   draft={link,img,rec,sug,text,mapsLink:draft?.mapsLink||""};
   const dupe=findDupe(rec.name);
@@ -557,7 +562,7 @@ function process(text,link,img,opts){
   tkStatus(dupe?`„${rec.name}“ ist schon ${dupe}.`:rec.name?"":"Kein Name gefunden. Bitte unten eintragen.",!!dupe||!rec.name);
 }
 function findDupe(name){const n=norm(name);if(n.length<3)return"";
-  for(let i=0;i<14;i++)for(const s of stopsOf(i))if(norm(s.name).includes(n)||n.includes(norm(s.name))&&norm(s.name).length>4)return `an Tag ${i+1} im Plan`;
+  for(let i=0;i<14;i++)for(const s of stopsOf(i)){const m=norm(s.name);if(m===n||(m.includes(n)||n.includes(m))&&Math.min(m.length,n.length)/Math.max(m.length,n.length)>=.6)return `an Tag ${i+1} im Plan`}
   return S.places.some(p=>p.day==null&&norm(p.name)===n)?"auf der Merkliste":""}
 async function renderDraft(){
   const box=$("#tkResult");if(!box)return;
@@ -809,7 +814,7 @@ function renderFx(){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-yen]");if(!b)return;const Y=$("#fxY");Y.value=fmtYen(+b.dataset.yen);Y.dispatchEvent(new Event("input"));FX.lastY=+b.dataset.yen;saveFx()});
 refreshFx(false).then(ok=>{if(ok&&tab==="fx")renderFx()});
 
-const APPV="13 vom 27.10.2026";
+const APPV="14 vom 1.11.2026";
 /* ---------- Start ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2000)}
 goTab("trip");

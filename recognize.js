@@ -100,8 +100,9 @@
   const MAPS_UI = /\b(route|directions|anrufen|call|speichern|save|[uü]bersicht|overview|rezensionen|reviews|speisekarte|fotos|photos|teilen|share|starten|start)\b/gi;
   // Wirkt der Name wie Buchstabensalat aus der Texterkennung? (zu viele Ein-/Zwei-Zeichen-Brocken)
   function plausible(n) {
-    const t = String(n || '').split(/\s+/).filter(Boolean); if (!t.length) return false;
-    const good = t.filter(w => /[A-Za-z]{3,}|[\u3040-\u30ff\u4e00-\u9faf]{2,}|^&$/.test(w)).length;
+    // reine Satzzeichen (?, &, !) zählen nicht mit – sie kommen in echten Namen vor („I'm donut ?“)
+    const t = String(n || '').split(/\s+/).filter(w => w && !/^[?!&+.,:;\-–]+$/.test(w)); if (!t.length) return false;
+    const good = t.filter(w => /[A-Za-z][A-Za-z'’]{2,}|[\u3040-\u30ff\u4e00-\u9faf]{2,}/.test(w)).length;
     return good / t.length >= 0.6 && !/[©®™]/.test(n);
   }
   function fromMaps(raw, opts) {
@@ -244,5 +245,26 @@
     return { day: d, time: dinner ? '19:00' : '12:30', why: `In ${rec.city} ist jedes Essen schon verplant – als Alternative an ${dayLabel(d)}.` };
   }
 
-  root.Rec = { fromText, suggest, AREAS, plausible };
+  // Text aus „Teilen → Kopieren“ in Google Maps: „Name\nAdresse\nhttps://maps.app.goo.gl/…“ (oder „Name · Adresse“)
+  function fromShare(raw) {
+    const url = (String(raw).match(/https?:\/\/\S+/) || [''])[0];
+    let rest = String(raw).replace(/https?:\/\/\S+/g, '').replace(/^(check out|sieh dir|schau dir)\s+/i, '').replace(/\s+(an|on google maps)\s*$/i, '');
+    let lines = rest.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 1 && /\s[·•|]\s/.test(lines[0])) lines = lines[0].split(/\s[·•|]\s/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 1) { const m = lines[0].match(/^(.*?)[,\s]*(\d+\s*-?\s*Chome.*|\d+[-–]\d+.*Japan.*|〒.*)$/i); if (m) lines = [m[1], m[2]]; }
+    if (!lines.length) return null;
+    const name = clean(lines[0]), addr = clean(lines.slice(1).join(', '));
+    if (!name || !plausible(name)) return null;
+    const score = {}, hits = [];
+    cityScan(addr, 5, score, hits); cityScan(name, 1, score, hits);
+    const best = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+    const low = name.toLowerCase();
+    let kind = 'Essen';
+    if (/temple|tempel|shrine|schrein|jinja|museum|park\b|garden|garten|castle|burg\b|tower|turm|observ|gallery|onsen|\b(ji|dera|taisha)\b/.test(low) && !/caf[eé]|restaurant|ramen|sushi|bakery|donut|bar\b/.test(low)) kind = 'Sehen';
+    else if (/\bbar\b|cocktail|whisk|speakeasy|izakaya bar/.test(low)) kind = 'Abend';
+    return { name, area: addr, city: best ? best[0] : '', kind, info: addr, hours: '', budget: '', closed: [], res: '', sure: true,
+      areaKey: hits.find(k => PREF[k]) || null, src: 'Google Maps', query: [name, addr].filter(Boolean).join(' '), url };
+  }
+
+  root.Rec = { fromText, suggest, AREAS, plausible, fromShare };
 })(typeof window !== 'undefined' ? window : globalThis);
