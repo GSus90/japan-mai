@@ -497,9 +497,11 @@ async function fromLink(){
   if(!/^https?:\/\//.test(link)){tkStatus("Kein Link gefunden. Lange ins Feld „Link“ tippen und „Einsetzen“ wählen.",true);$("#tkLink").focus();return}
   $("#tkLink").value=link;
   if(/maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps|maps\.google\./i.test(link)){
-    draft={...(draft||{}),mapsLink:link,link:""};$("#tkLink").value="";
-    tkStatus("Im Link steht kein Name. In Google Maps beim Ort auf „Teilen“ und dann auf „Kopieren“ tippen (nicht „Link kopieren“) – dann kommt der Name mit. Oder jetzt einen Screenshot wählen.",true);
-    $("#tkShotBtn").classList.add("pulse");return}
+    // Nur ein Kurzlink: Google lässt die App den Ort nicht nachschlagen. Link behalten, Name kurz eintippen lassen.
+    draft={mapsLink:link,link:"",img:null,manual:true,rec:{name:"",city:"",area:"",kind:"Essen",info:"",res:"",closed:[],sure:true,src:"Google Maps"},sug:{day:null,time:"19:00",why:""}};
+    $("#tkLink").value="";renderWish();
+    tkStatus("Link gespeichert – „Karte“ öffnet später genau diesen Ort. Den Namen verrät Google der App nicht: bitte unten kurz eintippen und die Stadt wählen, die App schlägt dann einen Tag vor.");
+    setTimeout(()=>{$("#tkResult")?.scrollIntoView({behavior:"smooth",block:"start"});$("#dName")?.focus()},60);return}
   tkStatus("Hole die Beschreibung von TikTok …");
   let text="";
   try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),9000);
@@ -601,7 +603,7 @@ async function renderDraft(){
 async function savePlace(day,time){
   const r=draft.rec;if(!r.name)return;
   if(draft.link&&ttId(draft.link))draft.link=ttClean(draft.link);
-  const p={id:Date.now().toString(36),src:draft.link?"":(draft.manual?"Eigene Idee":(r.src||(draft.mapsLink?"Google Maps":"TikTok"))),mapsUrl:draft.mapsLink||"",url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
+  const p={id:Date.now().toString(36),src:draft.link?"":(r.src||(draft.manual&&!draft.mapsLink?"Eigene Idee":(draft.mapsLink?"Google Maps":"TikTok"))),mapsUrl:draft.mapsLink||"",url:draft.link||"",name:r.name,city:r.city||"",info:r.info||"",kind:r.kind||"Essen",res:r.res||"",day,time:time||"12:00",
     q:r.query||[r.name,r.area,r.city].filter(Boolean).join(" "),closed:r.closed||[]};
   {const m=String(r.budget||"").match(/(\d[\d.,]*)/);if(m){const v=parseNum(m[1]);if(v>=100&&v<200000)p.price=v}}
   if(draft.img)p.img=await imgPut(draft.img);
@@ -814,7 +816,7 @@ function renderFx(){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-yen]");if(!b)return;const Y=$("#fxY");Y.value=fmtYen(+b.dataset.yen);Y.dispatchEvent(new Event("input"));FX.lastY=+b.dataset.yen;saveFx()});
 refreshFx(false).then(ok=>{if(ok&&tab==="fx")renderFx()});
 
-const APPV="14 vom 1.11.2026";
+const APPV="15 vom 7.11.2026";
 /* ---------- Start ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,2000)}
 goTab("trip");
